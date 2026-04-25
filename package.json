@@ -1,10 +1,10 @@
 {
   "name": "awesome-context-engine",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Drop-in persistent context and memory layer for AI coding tools.",
   "main": "./dist/cli.js",
   "bin": {
-    "awesome-context-engine": "./dist/cli.js"
+    "awesome-context-engine": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -35,11 +35,11 @@
   ],
   "devDependencies": {
     "@types/node": "^22.19.17",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.4.2",
-    "picocolors": "^1.1.1",
-    "ts-node": "^10.9.2"
+    "picocolors": "^1.1.1"
   }
 }

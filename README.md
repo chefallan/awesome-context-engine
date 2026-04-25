@@ -11,7 +11,7 @@ Portable repo memory for AI coding agents.
 
 awesome-context-engine keeps repository context current for AI coding tools by combining persistent memory, fast indexing, compact sync output, and optional automatic updates.
 
-![awesome-context-engine banner](assets/banner.png)
+![awesome-context-engine banner](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/banner.png)
 
 ## Table of Contents
 
@@ -118,7 +118,7 @@ awesome-context-engine solves this by:
 
 ## How It Works
 
-![How It Works](assets/how-it-works.png)
+![How It Works](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/how-it-works.png)
 
 1. Initialize repository memory and integration files with `init`.
 2. Index the codebase to generate project structure and metadata.
@@ -127,7 +127,7 @@ awesome-context-engine solves this by:
 
 ## `.awesome-context` Structure
 
-![Context Files](assets/context-files.png)
+![Context Files](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/context-files.png)
 
 ```text
 .awesome-context/
@@ -145,7 +145,7 @@ awesome-context-engine solves this by:
 
 ## Auto Mode
 
-![Auto Mode](assets/auto-mode.png)
+![Auto Mode](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/auto-mode.png)
 
 Run auto mode directly:
 
@@ -226,7 +226,7 @@ This run is a snapshot and will change as repository content changes.
 
 ## Token Optimization
 
-![Token Optimization](assets/token-optimization.png)
+![Token Optimization](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/token-optimization.png)
 
 The sync pipeline improves context quality per token by combining:
 
@@ -237,7 +237,7 @@ The sync pipeline improves context quality per token by combining:
 
 ## Works With AI Tools
 
-![AI Tools](assets/ai-tools.png)
+![AI Tools](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/ai-tools.png)
 
 - GitHub Copilot
 - Claude
