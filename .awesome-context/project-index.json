@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-25T01:31:51.192Z",
+  "generatedAt": "2026-04-25T01:39:26.003Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
   "totalFiles": 50,
   "totalDirectories": 15,
@@ -160,8 +160,8 @@
     },
     {
       "path": "docs/index.html",
-      "bytes": 10388,
-      "mtimeMs": 1777078305232.8547
+      "bytes": 12296,
+      "mtimeMs": 1777081162996.8552
     },
     {
       "path": "LICENSE",
@@ -196,7 +196,7 @@
     {
       "path": "src/commit-message.ts",
       "bytes": 12940,
-      "mtimeMs": 1777080708178.4978
+      "mtimeMs": 1777080882832.7983
     },
     {
       "path": "src/doctor.ts",

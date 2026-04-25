@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="awesome-context-engine is a cross-platform CLI for persistent repo memory, automatic context updates, and token-efficient AI coding workflows." />
+  <meta name="description" content="awesome-context-engine is a cross-platform CLI for persistent repo memory, automatic context updates, clean commit message generation, and token-efficient AI coding workflows." />
   <meta name="theme-color" content="#0b101a" />
   <meta property="og:title" content="awesome-context-engine" />
   <meta property="og:description" content="Portable repo memory for AI coding agents." />
@@ -270,22 +270,23 @@
         <span class="kicker">Open Source CLI</span>
         <span class="badge">Node 18+</span>
         <span class="badge">Cross-platform</span>
+        <span class="badge">Clean Commit</span>
       </div>
 
       <h1 id="title">awesome-context-engine</h1>
-      <p class="tagline">Portable repo memory for AI coding agents</p>
+      <p class="tagline">Portable repo memory and clean commit automation for AI coding agents</p>
 
       <pre class="command" aria-label="install command">npx awesome-context-engine</pre>
 
       <div class="actions">
         <a class="btn primary" href="https://github.com/chefallan/awesome-context-engine" target="_blank" rel="noreferrer">GitHub</a>
         <a class="btn" href="https://www.npmjs.com/package/awesome-context-engine" target="_blank" rel="noreferrer">npm</a>
-        <a class="btn" href="../README.md">README</a>
+        <a class="btn" href="https://github.com/chefallan/awesome-context-engine/blob/main/README.md" target="_blank" rel="noreferrer">README</a>
       </div>
 
       <p class="summary">
         Keep AI coding context fresh without manual prompt wrangling.
-        awesome-context-engine initializes repository memory, indexes your project, and continuously syncs compact context files for tools like Copilot, Claude, Cline, Continue, Cursor, and Codex.
+        awesome-context-engine initializes repository memory, indexes your project, syncs compact context files, and generates Clean Commit messages for tools like Copilot, Claude, Cline, Continue, Cursor, and Codex.
       </p>
 
       <div class="feature-grid">
@@ -302,6 +303,14 @@
           Generate compact, high-signal context for AI sessions.
         </div>
         <div class="feature-card">
+          <div class="feature-title">Clean Commit Output</div>
+          Generate commit titles and descriptions using the Clean Commit standard.
+        </div>
+        <div class="feature-card">
+          <div class="feature-title">Breaking Change Marker</div>
+          Use <span class="mono">commit-msg --breaking</span> to apply <span class="mono">!</span> when valid.
+        </div>
+        <div class="feature-card">
           <div class="feature-title">Local-first</div>
           Run entirely in-repo without external service requirements.
         </div>
@@ -312,6 +321,10 @@
         <div class="feature-card">
           <div class="feature-title">VS Code Startup Task</div>
           Optional <span class="mono">folderOpen</span> task for automatic syncing on workspace open.
+        </div>
+        <div class="feature-card">
+          <div class="feature-title">Strict Security Mode</div>
+          Block context sync when secret-like content is detected using <span class="mono">--strict</span>.
         </div>
       </div>
     </section>
@@ -324,12 +337,32 @@
         <li><span class="mono">npx awesome-context-engine index</span> to refresh project structure mapping.</li>
         <li><span class="mono">npx awesome-context-engine sync</span> to regenerate compact AI context.</li>
         <li><span class="mono">npx awesome-context-engine auto</span> to watch and update continuously.</li>
+        <li><span class="mono">npx awesome-context-engine commit-msg</span> to generate a Clean Commit-ready message.</li>
       </ol>
+    </section>
+
+    <section class="section" aria-labelledby="commit-standard-title">
+      <h2 id="commit-standard-title">Clean Commit Standard</h2>
+      <p>
+        Commit message generation follows the Clean Commit convention inspired by
+        <a href="https://github.com/wgtechlabs/clean-commit" target="_blank" rel="noreferrer">wgtechlabs/clean-commit</a>.
+        Use <span class="mono">npx awesome-context-engine commit-msg --breaking</span> only for incompatible changes.
+      </p>
     </section>
 
     <section class="section" aria-labelledby="compatibility-title">
       <h2 id="compatibility-title">Compatibility</h2>
       <p>Designed for macOS, Ubuntu/Linux, and Windows with Node.js 18+.</p>
+    </section>
+
+    <section class="section" aria-labelledby="credits-title">
+      <h2 id="credits-title">Credits</h2>
+      <p>
+        Clean Commit standard credit to
+        <a href="https://github.com/wgtechlabs" target="_blank" rel="noreferrer">@wgtechlabs</a>
+        and
+        <a href="https://github.com/warengonzaga" target="_blank" rel="noreferrer">@warengonzaga</a>.
+      </p>
     </section>
 
     <footer>
