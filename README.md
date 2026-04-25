@@ -214,6 +214,8 @@ npx awesome-context-engine commit-msg
 npx awesome-context-engine commit-msg --breaking
 ```
 
+When there are no staged or working-tree changes, `commit-msg` now falls back automatically to the latest meaningful commit so it can still suggest a concrete title and description.
+
 Use `--breaking` only when the change introduces an incompatible behavior or API change for users.
 The marker `!` is applied only for supported Clean Commit types: `new`, `update`, `remove`, and `security`.
 

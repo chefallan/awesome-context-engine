@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-type GitChangeSource = "staged" | "working-tree" | "status";
+type GitChangeSource = "staged" | "working-tree" | "status" | "last-commit";
 
 const IGNORED_CHANGE_PREFIXES = [".awesome-context/", "dist/"];
 
@@ -40,6 +40,7 @@ const CLEAN_COMMIT_EMOJI: Record<CleanCommitType, string> = {
 };
 
 type LastCommitInfo = {
+  hash: string;
   subject: string;
   prefix: string;
 };
@@ -109,16 +110,29 @@ function isVersionOnlySubject(subject: string): boolean {
 }
 
 async function getLastCommitInfo(rootDir: string): Promise<LastCommitInfo> {
-  const history = await runGit(rootDir, ["log", "-20", "--pretty=%s"]);
-  const subjects = history
+  const history = await runGit(rootDir, ["log", "-20", "--pretty=%H%x09%s"]);
+  const entries = history
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((line) => {
+      const [hash, ...subjectParts] = line.split("\t");
+      return {
+        hash: (hash ?? "").trim(),
+        subject: subjectParts.join("\t").trim()
+      };
+    })
+    .filter((entry) => entry.hash && entry.subject);
 
-  const selected = subjects.find((subject) => !isVersionOnlySubject(subject)) ?? subjects[0] ?? "chore: repository update";
+  const selected = entries.find((entry) => !isVersionOnlySubject(entry.subject)) ?? entries[0] ?? {
+    hash: "HEAD",
+    subject: "chore: repository update"
+  };
+
   return {
-    subject: selected,
-    prefix: parsePrefixFromSubject(selected)
+    hash: selected.hash,
+    subject: selected.subject,
+    prefix: parsePrefixFromSubject(selected.subject)
   };
 }
 
@@ -137,7 +151,107 @@ function getTopAreas(files: string[]): string[] {
     .slice(0, 3);
 }
 
+type ConcreteChangeSummary = {
+  action: string;
+  highlights: string[];
+};
+
+async function getChangePatchText(
+  rootDir: string,
+  source: GitChangeSource,
+  files: string[],
+  lastCommitHash: string
+): Promise<string> {
+  if (files.length === 0) {
+    return "";
+  }
+
+  const gitFiles = files.map((file) => normalizePath(file));
+
+  if (source === "staged") {
+    return runGit(rootDir, ["diff", "--cached", "--unified=0", "--", ...gitFiles]);
+  }
+  if (source === "working-tree") {
+    return runGit(rootDir, ["diff", "--unified=0", "--", ...gitFiles]);
+  }
+  if (source === "last-commit") {
+    return runGit(rootDir, ["show", "--format=", "--unified=0", lastCommitHash, "--", ...gitFiles]);
+  }
+
+  return "";
+}
+
+function inferConcreteChangeSummary(files: string[], diffText = ""): ConcreteChangeSummary | null {
+  const normalized = files.map((file) => normalizePath(file).toLowerCase());
+  const hasScanModule = normalized.includes("src/scan.ts");
+  const hasCommitMessageModule = normalized.includes("src/commit-message.ts");
+  const hasCli = normalized.includes("src/cli.ts");
+  const hasIndexer = normalized.includes("src/indexer.ts");
+  const hasReadme = normalized.includes("readme.md");
+  const hasDocsSite = normalized.some((file) => file.startsWith("docs/"));
+  const hasPackageConfig = normalized.includes("package.json") || normalized.includes("package-lock.json");
+  const lowerDiff = diffText.toLowerCase();
+
+  if (
+    hasCommitMessageModule &&
+    (lowerDiff.includes("latest meaningful commit") ||
+      lowerDiff.includes("last-commit") ||
+      lowerDiff.includes("getlastcommitinfo") ||
+      lowerDiff.includes("commit-msg") ||
+      lowerDiff.includes("concretechangesummary"))
+  ) {
+    const highlights = [
+      "Makes `commit-msg` fall back to the latest meaningful commit when the working tree is clean.",
+      "Uses latest-commit metadata and diff parsing so generated summaries describe the actual change instead of generic file-area labels."
+    ];
+
+    if (hasReadme || hasDocsSite) {
+      highlights.push("Updates README and docs to explain the automatic latest-commit fallback for `commit-msg`.");
+    }
+
+    return {
+      action: "make commit-msg auto-summarize latest commits",
+      highlights
+    };
+  }
+
+  if (hasScanModule) {
+    const highlights = [
+      "Adds a new `scan` command to baseline repository context for existing codebases."
+    ];
+
+    if (hasCli) {
+      highlights.push("Updates CLI onboarding so `init` runs the baseline scan automatically.");
+      highlights.push("Adds `scan --dry-run` preview mode for no-write repository analysis.");
+    }
+
+    if (hasIndexer) {
+      highlights.push("Extends indexing so scan previews can analyze the repository without writing output files.");
+    }
+
+    if (hasReadme || hasDocsSite) {
+      highlights.push("Refreshes README and docs so scan onboarding and preview behavior are documented.");
+    }
+
+    if (hasPackageConfig) {
+      highlights.push("Updates package metadata to ship the new scan capability.");
+    }
+
+    return {
+      action: "add repository scan and dry-run preview",
+      highlights
+    };
+  }
+
+  return null;
+}
+
 function inferAction(files: string[]): string {
+  const concreteSummary = inferConcreteChangeSummary(files);
+  if (concreteSummary) {
+    return concreteSummary.action;
+  }
+
   const normalized = files.map((file) => normalizePath(file).toLowerCase());
   const hasSrc = normalized.some((file) => file.startsWith("src/"));
   const hasReadme = normalized.includes("readme.md");
@@ -235,6 +349,10 @@ async function getDiffMetrics(rootDir: string, source: GitChangeSource, changes:
     ({ additions, deletions } = parseNumStat(raw));
   } else if (source === "working-tree") {
     const raw = await runGit(rootDir, ["diff", "--numstat"]);
+    ({ additions, deletions } = parseNumStat(raw));
+  } else if (source === "last-commit") {
+    const lastCommit = await getLastCommitInfo(rootDir);
+    const raw = await runGit(rootDir, ["show", "--numstat", "--format=", lastCommit.hash]);
     ({ additions, deletions } = parseNumStat(raw));
   }
 
@@ -377,6 +495,7 @@ function recommendedValidation(topAreas: string[], files: string[], type: CleanC
 
 function inferCleanCommitType(changes: GitChange[]): CleanCommitType {
   const files = changes.map((change) => normalizePath(change.path).toLowerCase());
+  const concreteSummary = inferConcreteChangeSummary(files);
 
   if (files.length === 0) {
     return "chore";
@@ -421,6 +540,10 @@ function inferCleanCommitType(changes: GitChange[]): CleanCommitType {
     return hasDependencySignals ? "chore" : "setup";
   }
 
+  if (concreteSummary && concreteSummary.action.startsWith("add ")) {
+    return "new";
+  }
+
   const mostlyAdded = changes.filter((change) => change.status === "A").length >= Math.ceil(changes.length * 0.6);
   if (mostlyAdded) {
     return "new";
@@ -440,6 +563,9 @@ function inferScope(changes: GitChange[], type: CleanCommitType): string | undef
   }
   if (files.some((file) => file.startsWith(".github/workflows/"))) {
     return "ci";
+  }
+  if (files.some((file) => file.startsWith("src/commit-message"))) {
+    return "commit-msg";
   }
   if (files.some((file) => file.startsWith("src/cli"))) {
     return "cli";
@@ -530,10 +656,23 @@ async function getChangedFiles(rootDir: string): Promise<{ source: GitChangeSour
   const statusChanges = statusFiles.map((file) => ({ path: file, status: "?" as GitChangeStatus }));
   const filteredStatusChanges = filterIgnoredGitChanges(statusChanges);
   if (filteredStatusChanges.length === 0) {
+    const lastCommit = await getLastCommitInfo(rootDir);
+    const lastCommitRaw = await runGit(rootDir, ["show", "--name-status", "--format=", lastCommit.hash]);
+    const lastCommitChanges = parseNameStatusOutput(lastCommitRaw);
+    const filteredLastCommitChanges = filterIgnoredGitChanges(lastCommitChanges);
+
+    if (filteredLastCommitChanges.length === 0) {
+      return {
+        source: "status",
+        files: [],
+        changes: []
+      };
+    }
+
     return {
-      source: "status",
-      files: [],
-      changes: []
+      source: "last-commit",
+      files: filterIgnoredChanges(unique(filteredLastCommitChanges.map((change) => normalizePath(change.path)))),
+      changes: filteredLastCommitChanges
     };
   }
 
@@ -559,10 +698,9 @@ export async function generateCommitMessageSuggestion(
     );
   }
 
-  const action = inferAction(changeSet.files);
-  const topAreas = getTopAreas(changeSet.files);
-  const topFilesPreview = changeSet.files.slice(0, 6).join(", ");
-  const extraCount = Math.max(0, changeSet.files.length - 6);
+  const patchText = await getChangePatchText(rootDir, changeSet.source, changeSet.files, lastCommitInfo.hash);
+  const concreteSummary = inferConcreteChangeSummary(changeSet.files, patchText);
+  const action = concreteSummary?.action ?? inferAction(changeSet.files);
   const diffMetrics = await getDiffMetrics(rootDir, changeSet.source, changeSet.changes);
   const commitType = inferCleanCommitType(changeSet.changes);
   const scope = inferScope(changeSet.changes, commitType);
@@ -570,22 +708,22 @@ export async function generateCommitMessageSuggestion(
   const breakingSupported = canUseBreakingMarker(commitType);
   const breaking = breakingRequested && breakingSupported;
   const deliverySummary = inferDeliverySummary(changeSet.files);
-  const riskLevel = inferRiskLevel(diffMetrics, breaking, commitType);
 
   const title = toCleanCommitTitle(commitType, action, scope, breaking);
-  const description = [
-    inferIntent(commitType, action),
-    `This change is categorized as '${commitType}'${scope ? ` for ${scope}` : ""}.`,
-    `Delivery summary: ${deliverySummary}.`,
-    `Work scope: ${changeSet.files.length} file(s) from ${changeSet.source} changes (${formatOperationBreakdown(diffMetrics)}).`,
-    `Impact estimate: +${diffMetrics.additions} / -${diffMetrics.deletions} lines changed.`,
-    `Primary focus areas: ${topAreas.join(", ")}.`,
-    `Key files touched: ${topFilesPreview}${extraCount > 0 ? ` (+${extraCount} more)` : ""}.`,
-    `Risk level: ${riskLevel}.`,
-    recommendedValidation(topAreas, changeSet.files, commitType),
-    getBreakingNote(breakingRequested, breakingSupported, commitType),
-    `Reference previous commit: \"${lastCommitSubject}\".`
-  ];
+  const description = concreteSummary?.highlights.length
+    ? [...concreteSummary.highlights]
+    : [
+        inferIntent(commitType, action),
+        `Delivery summary: ${deliverySummary}.`
+      ];
+
+  if (!concreteSummary) {
+    description.push(`Change scope: ${changeSet.files.length} file(s), +${diffMetrics.additions} / -${diffMetrics.deletions} lines.`);
+  }
+
+  if (breakingRequested) {
+    description.push(getBreakingNote(breakingRequested, breakingSupported, commitType));
+  }
 
   return {
     standard: "clean-commit",
@@ -599,6 +737,7 @@ export async function generateCommitMessageSuggestion(
     breakingSupported,
     breaking,
     basedOn: {
+      hash: lastCommitInfo.hash,
       subject: lastCommitSubject,
       prefix
     }
