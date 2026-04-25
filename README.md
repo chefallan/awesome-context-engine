@@ -18,6 +18,7 @@ awesome-context-engine keeps repository context current for AI coding tools by c
 - [Install](#install)
 - [Platform Compatibility](#platform-compatibility)
 - [Quick Commands](#quick-commands)
+- [Special Commands](#special-commands)
 - [What It Solves](#what-it-solves)
 - [Features](#features)
 - [Commands](#commands)
@@ -27,6 +28,7 @@ awesome-context-engine keeps repository context current for AI coding tools by c
 - [Auto Mode](#auto-mode)
 - [Example: CI Health Check](#example-ci-health-check)
 - [Example: Clean Commit Message Generation](#example-clean-commit-message-generation)
+- [Example: End Of Day (EOD) Report](#example-end-of-day-eod-report)
 - [Example: Strict Security Mode](#example-strict-security-mode)
 - [Example: A/B Token Savings Measurement](#example-ab-token-savings-measurement)
 - [Interpreting Results](#interpreting-results)
@@ -73,8 +75,23 @@ npx awesome-context-engine sync
 npx awesome-context-engine auto
 npx awesome-context-engine doctor
 npx awesome-context-engine benchmark
-npx awesome-context-engine commit-msg
 ```
+
+## Special Commands
+
+> [!IMPORTANT]
+> **Special Feature Commands**
+> Use these when you need communication-ready outputs from repository history for changelogs, and end-of-day reporting.
+
+```bash
+npx awesome-context-engine commit-msg
+npx awesome-context-engine commit-msg --breaking
+npx awesome-context-engine eod-report 2026-04-24
+npx awesome-context-engine eod-report 2026-04-24 --json --compact
+```
+
+- `commit-msg`: Suggests Clean Commit title/body from current repository changes.
+- `eod-report <date>`: Generates an End Of Day report with executive summary, delivery stats, and detailed outcomes.
 
 ## What It Solves
 
@@ -95,6 +112,7 @@ awesome-context-engine solves this by:
 - Token optimization via deduped, prioritized, minimal context generation
 - Safe integration files for Copilot, Claude, Cline, Continue, Cursor, and Codex
 - Health checks through `doctor` with text or JSON output
+- End Of Day (EOD) reporting from git history with executive summary and JSON output
 
 ## Commands
 
@@ -106,7 +124,6 @@ awesome-context-engine solves this by:
 | `awesome-context-engine auto` | Start watcher mode (index -> sync on change) |
 | `awesome-context-engine doctor` | Validate setup health |
 | `awesome-context-engine benchmark` | Estimate token savings from compact context |
-| `awesome-context-engine commit-msg` | Suggest Clean Commit title/body from git changes |
 | `awesome-context-engine help` | Show command help |
 
 ## Flags
@@ -160,6 +177,11 @@ npx awesome-context-engine auto
 
 During `init`, the project can also install a VS Code task (`runOn: folderOpen`) so context refresh starts automatically when the workspace opens.
 
+When `auto` is running, it performs an initial `index + sync`, then re-runs on repository changes and editable context files (`memory.md`, `preferences.md`, `decisions.md`, `workflows.md`).
+
+After this task is installed, you do not need to manually run `auto` every time you reopen VS Code.
+One-time setup: allow automatic tasks in this workspace via **Tasks: Manage Automatic Tasks in Folder** and set to **Allow Automatic Tasks**.
+
 ## Example: CI Health Check
 
 ```bash
@@ -175,6 +197,15 @@ npx awesome-context-engine commit-msg --breaking
 
 Use `--breaking` only when the change introduces an incompatible behavior or API change for users.
 The marker `!` is applied only for supported Clean Commit types: `new`, `update`, `remove`, and `security`.
+
+## Example: End Of Day (EOD) Report
+
+```bash
+npx awesome-context-engine eod-report 2026-04-24
+npx awesome-context-engine eod-report 2026-04-24 --json --compact
+```
+
+By default, `eod-report` returns a bullet-list summary of commits for that date.
 
 ## Example: Strict Security Mode
 

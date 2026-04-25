@@ -5,6 +5,7 @@ import path from "node:path";
 import { runTokenBenchmark } from "./benchmark.js";
 import { generateCommitMessageSuggestion } from "./commit-message.js";
 import { runDoctor } from "./doctor.js";
+import { generateEodReport } from "./eod-report.js";
 import { initProject, type InitResult } from "./init.js";
 import { indexProject } from "./indexer.js";
 import { syncContext } from "./sync.js";
@@ -14,7 +15,7 @@ import { confirmPrompt, error, heading, info, secondary, success, warning } from
 import { ensureVscodeAutoTask } from "./vscodeTask.js";
 import { startAutoMode } from "./watcher.js";
 
-type Command = "init" | "index" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "help";
+type Command = "init" | "index" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "eod-report" | "help";
 
 type CliOptions = {
   yes: boolean;
@@ -29,6 +30,7 @@ type CliOptions = {
 type ParsedCli = {
   command: Command | null;
   options: CliOptions;
+  commandArgs: string[];
 };
 
 const CREATE_LIST = [
@@ -52,6 +54,7 @@ function parseCli(argv: string[]): ParsedCli {
   };
 
   let command: Command | null = null;
+  const commandArgs: string[] = [];
   const args = argv.slice(2);
 
   for (const rawArg of args) {
@@ -99,15 +102,18 @@ function parseCli(argv: string[]): ParsedCli {
     }
 
     if (!command) {
-      if (["init", "index", "sync", "auto", "doctor", "benchmark", "commit-msg", "help"].includes(arg)) {
+      if (["init", "index", "sync", "auto", "doctor", "benchmark", "commit-msg", "eod-report", "help"].includes(arg)) {
         command = arg as Command;
       } else {
         command = "help";
       }
+      continue;
     }
+
+    commandArgs.push(arg);
   }
 
-  return { command, options };
+  return { command, options, commandArgs };
 }
 
 function printHelp(): void {
@@ -123,7 +129,8 @@ Usage:
   awesome-context-engine auto       Watch mode: index + sync on changes
   awesome-context-engine doctor     Check setup health
   awesome-context-engine benchmark  Estimate token savings (raw vs ai-context)
-  awesome-context-engine commit-msg Suggest Clean Commit title/body from git changes
+  awesome-context-engine commit-msg Suggest Clean Commit title/body for EOD reporting
+  awesome-context-engine eod-report <date>  Generate EOD report from commits (YYYY-MM-DD)
 
 Flags:
   --yes, -y           Skip prompts and use defaults
@@ -399,11 +406,56 @@ async function runCommitMessageCommand(rootDir: string, options: CliOptions): Pr
   }
 }
 
+async function runEodReportCommand(rootDir: string, options: CliOptions, commandArgs: string[]): Promise<void> {
+  const dateArg = commandArgs[0];
+  const result = await generateEodReport(rootDir, dateArg);
+
+  if (options.json) {
+    const indent = options.compact ? undefined : 2;
+    console.log(
+      JSON.stringify(
+        {
+          command: "eod-report",
+          rootDir,
+          ...result
+        },
+        null,
+        indent
+      )
+    );
+    return;
+  }
+
+  heading(`EOD Summary (${result.date})`);
+  for (const line of result.executiveSummary) {
+    console.log(`- ${line}`);
+  }
+
+  const types = Object.entries(result.commitTypeBreakdown).sort((a, b) => b[1] - a[1]);
+  if (types.length > 0) {
+    console.log("- Commit type mix:");
+    for (const [type, count] of types) {
+      console.log(`  - ${type}: ${count}`);
+    }
+  }
+
+  console.log("- Detailed commit outcomes:");
+  if (result.summaryBullets.length === 0) {
+    console.log("  - No commits found for this date.");
+    return;
+  }
+
+  for (const bullet of result.summaryBullets) {
+    console.log(`  - ${bullet}`);
+  }
+}
+
 async function main(): Promise<void> {
   const rootDir = process.cwd();
   const parsed = parseCli(process.argv);
   const command = parsed.command;
   const options = parsed.options;
+  const commandArgs = parsed.commandArgs;
 
   try {
     switch (command) {
@@ -447,6 +499,10 @@ async function main(): Promise<void> {
       }
       case "commit-msg": {
         await runCommitMessageCommand(rootDir, options);
+        break;
+      }
+      case "eod-report": {
+        await runEodReportCommand(rootDir, options, commandArgs);
         break;
       }
       case "help":

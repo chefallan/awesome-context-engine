@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-25T01:39:26.003Z",
+  "generatedAt": "2026-04-25T02:26:30.891Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
-  "totalFiles": 50,
+  "totalFiles": 51,
   "totalDirectories": 15,
   "byExtension": {
     "[no-ext]": 8,
@@ -10,7 +10,7 @@
     ".json": 5,
     ".png": 6,
     ".html": 1,
-    ".ts": 15
+    ".ts": 16
   },
   "files": [
     {
@@ -160,8 +160,8 @@
     },
     {
       "path": "docs/index.html",
-      "bytes": 12296,
-      "mtimeMs": 1777081162996.8552
+      "bytes": 15811,
+      "mtimeMs": 1777083875962.7034
     },
     {
       "path": "LICENSE",
@@ -171,17 +171,17 @@
     {
       "path": "package-lock.json",
       "bytes": 22828,
-      "mtimeMs": 1777080368321.9756
+      "mtimeMs": 1777083967537.5586
     },
     {
       "path": "package.json",
       "bytes": 1034,
-      "mtimeMs": 1777080368320.9744
+      "mtimeMs": 1777083967536.5596
     },
     {
       "path": "README.md",
-      "bytes": 10121,
-      "mtimeMs": 1777080222096.9685
+      "bytes": 11501,
+      "mtimeMs": 1777083875962.7034
     },
     {
       "path": "src/benchmark.ts",
@@ -190,18 +190,23 @@
     },
     {
       "path": "src/cli.ts",
-      "bytes": 13200,
-      "mtimeMs": 1777080222096.9685
+      "bytes": 14807,
+      "mtimeMs": 1777083875962.7034
     },
     {
       "path": "src/commit-message.ts",
-      "bytes": 12940,
-      "mtimeMs": 1777080882832.7983
+      "bytes": 19776,
+      "mtimeMs": 1777083876060.9797
     },
     {
       "path": "src/doctor.ts",
       "bytes": 3895,
       "mtimeMs": 1777073574555.505
+    },
+    {
+      "path": "src/eod-report.ts",
+      "bytes": 12374,
+      "mtimeMs": 1777083876060.9797
     },
     {
       "path": "src/graph.ts",
@@ -255,8 +260,8 @@
     },
     {
       "path": "src/watcher.ts",
-      "bytes": 4772,
-      "mtimeMs": 1777076547265.1284
+      "bytes": 5107,
+      "mtimeMs": 1777083875960.6997
     },
     {
       "path": "tsconfig.json",

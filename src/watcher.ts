@@ -6,6 +6,13 @@ import { CONTEXT_DIR_NAME, getDefaultIgnoreNames } from "./templates.js";
 
 const DEBOUNCE_MS = 3000;
 
+const AUTO_TRIGGER_CONTEXT_FILES = new Set([
+  `${CONTEXT_DIR_NAME}/memory.md`,
+  `${CONTEXT_DIR_NAME}/preferences.md`,
+  `${CONTEXT_DIR_NAME}/decisions.md`,
+  `${CONTEXT_DIR_NAME}/workflows.md`
+]);
+
 export type AutoModeOptions = {
   strict?: boolean;
 };
@@ -16,6 +23,11 @@ function shouldIgnore(relativePath: string | null): boolean {
   }
 
   const normalized = relativePath.replace(/\\/g, "/");
+
+  if (normalized.startsWith(`${CONTEXT_DIR_NAME}/`)) {
+    return !AUTO_TRIGGER_CONTEXT_FILES.has(normalized);
+  }
+
   const baseName = path.posix.basename(normalized);
   const ignoredNames = getDefaultIgnoreNames();
   ignoredNames.add("coverage");
@@ -28,7 +40,6 @@ function shouldIgnore(relativePath: string | null): boolean {
     normalized.startsWith("node_modules/") ||
     normalized.startsWith(".git/") ||
     normalized.startsWith(".next/") ||
-    normalized.startsWith(`${CONTEXT_DIR_NAME}/`) ||
     normalized.startsWith("dist/") ||
     normalized.startsWith("build/") ||
     normalized.startsWith("coverage/")
@@ -92,6 +103,7 @@ export async function startAutoMode(rootDir: string, options: AutoModeOptions = 
 
       await syncContext(rootDir, { strict: options.strict });
       console.log("Synced AI context");
+      console.log("[auto] cycle complete (index + sync)");
     } catch (error) {
       console.error("[auto] sync failed", error);
     } finally {

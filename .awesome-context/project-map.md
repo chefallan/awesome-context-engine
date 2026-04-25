@@ -1,9 +1,9 @@
 # Project Map
 
-Generated at: 2026-04-25T01:39:26.003Z
+Generated at: 2026-04-25T02:26:30.891Z
 
 ## Repository Snapshot
-- Total files: 50
+- Total files: 51
 - Total directories: 15
 - Truncated scan: no
 
@@ -53,6 +53,7 @@ Generated at: 2026-04-25T01:39:26.003Z
 │   ├── cli.ts
 │   ├── commit-message.ts
 │   ├── doctor.ts
+│   ├── eod-report.ts
 │   ├── graph.ts
 │   ├── indexer.ts
 │   ├── init.ts
@@ -79,7 +80,7 @@ Generated at: 2026-04-25T01:39:26.003Z
 ```
 
 ## Detected Languages
-- TypeScript: 15
+- TypeScript: 16
 - Markdown: 14
 - JSON: 5
 - HTML: 1

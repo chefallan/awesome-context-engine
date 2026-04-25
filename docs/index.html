@@ -200,6 +200,40 @@
       padding: 24px 22px;
     }
 
+    .section.special {
+      position: relative;
+      border-color: rgba(45, 212, 191, 0.7);
+      background:
+        radial-gradient(900px 240px at 0% 0%, rgba(45, 212, 191, 0.16), transparent 60%),
+        linear-gradient(180deg, rgba(18, 31, 44, 0.94), rgba(11, 19, 30, 0.92));
+      box-shadow: 0 14px 34px rgba(9, 17, 30, 0.52), 0 0 0 1px rgba(45, 212, 191, 0.18) inset;
+      overflow: hidden;
+    }
+
+    .section.special::before {
+      content: "Special Feature";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      color: #d8fff6;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: 1px solid rgba(45, 212, 191, 0.5);
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: rgba(11, 27, 33, 0.62);
+    }
+
+    .section.special h2 {
+      color: #dcfff8;
+    }
+
+    .section.special .command-list {
+      color: #d0def6;
+    }
+
     .section h2 {
       margin: 0 0 10px;
       font-size: 24px;
@@ -337,8 +371,49 @@
         <li><span class="mono">npx awesome-context-engine index</span> to refresh project structure mapping.</li>
         <li><span class="mono">npx awesome-context-engine sync</span> to regenerate compact AI context.</li>
         <li><span class="mono">npx awesome-context-engine auto</span> to watch and update continuously.</li>
-        <li><span class="mono">npx awesome-context-engine commit-msg</span> to generate a Clean Commit-ready message.</li>
       </ol>
+    </section>
+
+    <section class="section special" aria-labelledby="special-commands-title">
+      <h2 id="special-commands-title">Special Commands</h2>
+      <p>Use these advanced commands for communication-ready outputs from your repository history.</p>
+      <ul class="command-list">
+        <li><span class="mono">npx awesome-context-engine commit-msg</span> to generate a Clean Commit-ready title and description.</li>
+        <li><span class="mono">npx awesome-context-engine commit-msg --breaking</span> to mark incompatible changes when valid.</li>
+        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24</span> to produce a date-based leadership summary.</li>
+        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24 --json --compact</span> for dashboards and automation pipelines.</li>
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="eod-report-title">
+      <h2 id="eod-report-title">End Of Day (EOD) Reports</h2>
+      <p>
+        Turn your daily commits into a leadership-ready report with executive summary, delivery stats, and detailed
+        plain-English outcomes.
+      </p>
+      <ul class="command-list">
+        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24</span> for readable bullet output.</li>
+        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24 --json --compact</span> for automation and dashboards.</li>
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="auto-start-title">
+      <h2 id="auto-start-title">Auto-start on Reopen</h2>
+      <p>
+        After setup installs the VS Code <span class="mono">folderOpen</span> task, you do not need to manually run
+        <span class="mono">auto</span> each time. Reopening the workspace starts the index + sync cycle automatically.
+        One-time action: set this workspace to <strong>Allow Automatic Tasks</strong> from
+        <span class="mono">Tasks: Manage Automatic Tasks in Folder</span>.
+      </p>
+    </section>
+
+    <section class="section" aria-labelledby="updates-title">
+      <h2 id="updates-title">Latest Updates</h2>
+      <ul class="command-list">
+        <li>Commit message generation follows the Clean Commit standard with optional <span class="mono">--breaking</span>.</li>
+        <li>EOD report now provides executive summary, delivery stats, and detailed plain-English commit outcomes.</li>
+        <li>Auto mode performs <span class="mono">index + sync</span> on startup and re-runs on repository and editable context updates.</li>
+      </ul>
     </section>
 
     <section class="section" aria-labelledby="commit-standard-title">

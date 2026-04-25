@@ -16,6 +16,17 @@ type GitChange = {
   status: GitChangeStatus;
 };
 
+type DiffMetrics = {
+  additions: number;
+  deletions: number;
+  addedFiles: number;
+  modifiedFiles: number;
+  deletedFiles: number;
+  renamedFiles: number;
+};
+
+type RiskLevel = "low" | "medium" | "high";
+
 const CLEAN_COMMIT_EMOJI: Record<CleanCommitType, string> = {
   new: "📦",
   update: "🔧",
@@ -184,6 +195,184 @@ function parseNameStatusOutput(raw: string): GitChange[] {
   }
 
   return changes;
+}
+
+function parseNumStat(raw: string): { additions: number; deletions: number } {
+  let additions = 0;
+  let deletions = 0;
+
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    const parts = trimmed.split(/\t+/);
+    if (parts.length < 3) {
+      continue;
+    }
+
+    const add = Number.parseInt(parts[0], 10);
+    const del = Number.parseInt(parts[1], 10);
+
+    if (Number.isFinite(add)) {
+      additions += add;
+    }
+    if (Number.isFinite(del)) {
+      deletions += del;
+    }
+  }
+
+  return { additions, deletions };
+}
+
+async function getDiffMetrics(rootDir: string, source: GitChangeSource, changes: GitChange[]): Promise<DiffMetrics> {
+  let additions = 0;
+  let deletions = 0;
+
+  if (source === "staged") {
+    const raw = await runGit(rootDir, ["diff", "--numstat", "--cached"]);
+    ({ additions, deletions } = parseNumStat(raw));
+  } else if (source === "working-tree") {
+    const raw = await runGit(rootDir, ["diff", "--numstat"]);
+    ({ additions, deletions } = parseNumStat(raw));
+  }
+
+  return {
+    additions,
+    deletions,
+    addedFiles: changes.filter((change) => change.status === "A" || change.status === "?").length,
+    modifiedFiles: changes.filter((change) => change.status === "M").length,
+    deletedFiles: changes.filter((change) => change.status === "D").length,
+    renamedFiles: changes.filter((change) => change.status === "R").length
+  };
+}
+
+function formatOperationBreakdown(metrics: DiffMetrics): string {
+  const chunks: string[] = [];
+  if (metrics.addedFiles > 0) {
+    chunks.push(`${metrics.addedFiles} added`);
+  }
+  if (metrics.modifiedFiles > 0) {
+    chunks.push(`${metrics.modifiedFiles} modified`);
+  }
+  if (metrics.deletedFiles > 0) {
+    chunks.push(`${metrics.deletedFiles} deleted`);
+  }
+  if (metrics.renamedFiles > 0) {
+    chunks.push(`${metrics.renamedFiles} renamed`);
+  }
+
+  return chunks.length > 0 ? chunks.join(", ") : "file operations not classified";
+}
+
+function toHumanList(items: string[]): string {
+  if (items.length === 0) {
+    return "none";
+  }
+  if (items.length === 1) {
+    return items[0];
+  }
+  if (items.length === 2) {
+    return `${items[0]} and ${items[1]}`;
+  }
+
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+function inferDeliverySummary(files: string[]): string {
+  const normalized = files.map((file) => normalizePath(file).toLowerCase());
+  const themes: string[] = [];
+
+  if (normalized.some((file) => file.startsWith("src/"))) {
+    themes.push("core CLI logic");
+  }
+  if (normalized.includes("readme.md") || normalized.some((file) => file.startsWith("docs/"))) {
+    themes.push("developer documentation");
+  }
+  if (normalized.some((file) => file.startsWith(".github/workflows/"))) {
+    themes.push("automation workflow");
+  }
+  if (normalized.some((file) => file === "package.json" || file.endsWith("-lock.json"))) {
+    themes.push("package configuration");
+  }
+  if (normalized.some((file) => file.startsWith("tests/") || file.includes(".test.") || file.includes(".spec."))) {
+    themes.push("test coverage");
+  }
+
+  if (themes.length === 0) {
+    return "repository-level updates";
+  }
+
+  return toHumanList(themes.slice(0, 3));
+}
+
+function inferIntent(type: CleanCommitType, action: string): string {
+  switch (type) {
+    case "new":
+      return `This work introduces new capability to ${action}.`;
+    case "update":
+      return `This work improves existing behavior to ${action}.`;
+    case "remove":
+      return `This work removes obsolete or conflicting pieces to ${action}.`;
+    case "security":
+      return `This work hardens security-sensitive areas while ${action}.`;
+    case "setup":
+      return `This work updates tooling and project setup to ${action}.`;
+    case "chore":
+      return `This work performs maintenance-oriented changes to ${action}.`;
+    case "test":
+      return `This work strengthens confidence with test-focused changes to ${action}.`;
+    case "docs":
+      return `This work clarifies documentation and guidance to ${action}.`;
+    case "release":
+      return `This work prepares a release package to ${action}.`;
+    default:
+      return `This work updates the repository to ${action}.`;
+  }
+}
+
+function inferRiskLevel(metrics: DiffMetrics, breaking: boolean, type: CleanCommitType): RiskLevel {
+  if (breaking || type === "security") {
+    return "high";
+  }
+
+  const totalLineDelta = metrics.additions + metrics.deletions;
+  if (metrics.deletedFiles >= 2 || totalLineDelta > 500) {
+    return "high";
+  }
+  if (metrics.deletedFiles >= 1 || totalLineDelta > 150 || metrics.renamedFiles > 0) {
+    return "medium";
+  }
+
+  return "low";
+}
+
+function recommendedValidation(topAreas: string[], files: string[], type: CleanCommitType): string {
+  const normalized = files.map((file) => normalizePath(file).toLowerCase());
+  const checks: string[] = [];
+
+  if (normalized.some((file) => file.startsWith("src/"))) {
+    checks.push("run the build and smoke-test affected CLI commands");
+  }
+  if (normalized.some((file) => file.startsWith("docs/") || file === "readme.md")) {
+    checks.push("verify docs examples still match actual command behavior");
+  }
+  if (normalized.some((file) => file.startsWith(".github/workflows/"))) {
+    checks.push("validate workflow syntax and expected trigger behavior");
+  }
+  if (normalized.some((file) => file === "package.json" || file.endsWith("-lock.json"))) {
+    checks.push("confirm install/build scripts still run on a clean environment");
+  }
+  if (type === "security") {
+    checks.push("perform a focused security regression check on changed paths");
+  }
+
+  if (checks.length === 0) {
+    checks.push("run the standard project sanity checks before merging");
+  }
+
+  return `Suggested validation: ${toHumanList(checks.slice(0, 3))}.`;
 }
 
 function inferCleanCommitType(changes: GitChange[]): CleanCommitType {
@@ -374,19 +563,27 @@ export async function generateCommitMessageSuggestion(
   const topAreas = getTopAreas(changeSet.files);
   const topFilesPreview = changeSet.files.slice(0, 6).join(", ");
   const extraCount = Math.max(0, changeSet.files.length - 6);
+  const diffMetrics = await getDiffMetrics(rootDir, changeSet.source, changeSet.changes);
   const commitType = inferCleanCommitType(changeSet.changes);
   const scope = inferScope(changeSet.changes, commitType);
   const breakingRequested = Boolean(options.breaking);
   const breakingSupported = canUseBreakingMarker(commitType);
   const breaking = breakingRequested && breakingSupported;
+  const deliverySummary = inferDeliverySummary(changeSet.files);
+  const riskLevel = inferRiskLevel(diffMetrics, breaking, commitType);
 
   const title = toCleanCommitTitle(commitType, action, scope, breaking);
   const description = [
-    `Detected type: ${commitType}.`,
+    inferIntent(commitType, action),
+    `This change is categorized as '${commitType}'${scope ? ` for ${scope}` : ""}.`,
+    `Delivery summary: ${deliverySummary}.`,
+    `Work scope: ${changeSet.files.length} file(s) from ${changeSet.source} changes (${formatOperationBreakdown(diffMetrics)}).`,
+    `Impact estimate: +${diffMetrics.additions} / -${diffMetrics.deletions} lines changed.`,
+    `Primary focus areas: ${topAreas.join(", ")}.`,
+    `Key files touched: ${topFilesPreview}${extraCount > 0 ? ` (+${extraCount} more)` : ""}.`,
+    `Risk level: ${riskLevel}.`,
+    recommendedValidation(topAreas, changeSet.files, commitType),
     getBreakingNote(breakingRequested, breakingSupported, commitType),
-    `Update ${changeSet.files.length} file(s) from ${changeSet.source} changes.`,
-    `Touch areas: ${topAreas.join(", ")}.`,
-    `Changed files: ${topFilesPreview}${extraCount > 0 ? ` (+${extraCount} more)` : ""}.`,
     `Reference previous commit: \"${lastCommitSubject}\".`
   ];
 
