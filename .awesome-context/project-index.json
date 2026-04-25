@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-25T01:23:45.215Z",
+  "generatedAt": "2026-04-25T01:31:51.192Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
   "totalFiles": 50,
   "totalDirectories": 15,
@@ -171,12 +171,12 @@
     {
       "path": "package-lock.json",
       "bytes": 22828,
-      "mtimeMs": 1777073170940.002
+      "mtimeMs": 1777080368321.9756
     },
     {
       "path": "package.json",
       "bytes": 1034,
-      "mtimeMs": 1777079445413.214
+      "mtimeMs": 1777080368320.9744
     },
     {
       "path": "README.md",
@@ -195,8 +195,8 @@
     },
     {
       "path": "src/commit-message.ts",
-      "bytes": 12318,
-      "mtimeMs": 1777080222096.9685
+      "bytes": 12940,
+      "mtimeMs": 1777080708178.4978
     },
     {
       "path": "src/doctor.ts",

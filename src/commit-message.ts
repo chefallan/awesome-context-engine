@@ -79,21 +79,36 @@ function unique<T>(values: T[]): T[] {
 }
 
 function filterIgnoredChanges(files: string[]): string[] {
-  const filtered = files.filter((file) => {
+  return files.filter((file) => {
     const normalized = normalizePath(file);
     return !IGNORED_CHANGE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
   });
-
-  return filtered.length > 0 ? filtered : files;
 }
 
 function filterIgnoredGitChanges(changes: GitChange[]): GitChange[] {
-  const filtered = changes.filter((change) => {
+  return changes.filter((change) => {
     const normalized = normalizePath(change.path);
     return !IGNORED_CHANGE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
   });
+}
 
-  return filtered.length > 0 ? filtered : changes;
+function isVersionOnlySubject(subject: string): boolean {
+  const trimmed = subject.trim();
+  return /^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(trimmed);
+}
+
+async function getLastCommitInfo(rootDir: string): Promise<LastCommitInfo> {
+  const history = await runGit(rootDir, ["log", "-20", "--pretty=%s"]);
+  const subjects = history
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const selected = subjects.find((subject) => !isVersionOnlySubject(subject)) ?? subjects[0] ?? "chore: repository update";
+  return {
+    subject: selected,
+    prefix: parsePrefixFromSubject(selected)
+  };
 }
 
 function getTopAreas(files: string[]): string[] {
@@ -289,22 +304,26 @@ async function getChangedFiles(rootDir: string): Promise<{ source: GitChangeSour
   const stagedChanges = parseNameStatusOutput(stagedRaw);
   if (stagedChanges.length > 0) {
     const filteredChanges = filterIgnoredGitChanges(stagedChanges);
-    return {
-      source: "staged",
-      files: filterIgnoredChanges(unique(filteredChanges.map((change) => normalizePath(change.path)))),
-      changes: filteredChanges
-    };
+    if (filteredChanges.length > 0) {
+      return {
+        source: "staged",
+        files: filterIgnoredChanges(unique(filteredChanges.map((change) => normalizePath(change.path)))),
+        changes: filteredChanges
+      };
+    }
   }
 
   const workingTreeRaw = await runGit(rootDir, ["diff", "--name-status"]);
   const workingTreeChanges = parseNameStatusOutput(workingTreeRaw);
   if (workingTreeChanges.length > 0) {
     const filteredChanges = filterIgnoredGitChanges(workingTreeChanges);
-    return {
-      source: "working-tree",
-      files: filterIgnoredChanges(unique(filteredChanges.map((change) => normalizePath(change.path)))),
-      changes: filteredChanges
-    };
+    if (filteredChanges.length > 0) {
+      return {
+        source: "working-tree",
+        files: filterIgnoredChanges(unique(filteredChanges.map((change) => normalizePath(change.path)))),
+        changes: filteredChanges
+      };
+    }
   }
 
   const statusRaw = await runGit(rootDir, ["status", "--porcelain"]);
@@ -321,6 +340,14 @@ async function getChangedFiles(rootDir: string): Promise<{ source: GitChangeSour
 
   const statusChanges = statusFiles.map((file) => ({ path: file, status: "?" as GitChangeStatus }));
   const filteredStatusChanges = filterIgnoredGitChanges(statusChanges);
+  if (filteredStatusChanges.length === 0) {
+    return {
+      source: "status",
+      files: [],
+      changes: []
+    };
+  }
+
   return {
     source: "status",
     files: filterIgnoredChanges(unique(filteredStatusChanges.map((change) => normalizePath(change.path)))),
@@ -332,13 +359,15 @@ export async function generateCommitMessageSuggestion(
   rootDir: string,
   options: CommitMessageOptions = {}
 ): Promise<CommitMessageSuggestion> {
-  const subject = await runGit(rootDir, ["log", "-1", "--pretty=%s"]);
-  const lastCommitSubject = subject || "chore: repository update";
-  const prefix = parsePrefixFromSubject(lastCommitSubject);
+  const lastCommitInfo = await getLastCommitInfo(rootDir);
+  const lastCommitSubject = lastCommitInfo.subject;
+  const prefix = lastCommitInfo.prefix;
 
   const changeSet = await getChangedFiles(rootDir);
   if (changeSet.files.length === 0) {
-    throw new Error("No changed files detected. Make changes or stage files before generating a commit message.");
+    throw new Error(
+      "No commit-worthy changes detected (only generated files like .awesome-context/ or dist/ changed)."
+    );
   }
 
   const action = inferAction(changeSet.files);
@@ -353,7 +382,6 @@ export async function generateCommitMessageSuggestion(
 
   const title = toCleanCommitTitle(commitType, action, scope, breaking);
   const description = [
-    `Use Clean Commit format: <emoji> <type>${scope ? " (<scope>)" : ""}${breaking ? "!" : ""}: <description>.`,
     `Detected type: ${commitType}.`,
     getBreakingNote(breakingRequested, breakingSupported, commitType),
     `Update ${changeSet.files.length} file(s) from ${changeSet.source} changes.`,
