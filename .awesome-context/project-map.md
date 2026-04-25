@@ -1,10 +1,10 @@
 # Project Map
 
-Generated at: 2026-04-24T23:28:49.870Z
+Generated at: 2026-04-25T01:23:45.215Z
 
 ## Repository Snapshot
-- Total files: 36
-- Total directories: 12
+- Total files: 50
+- Total directories: 15
 - Truncated scan: no
 
 ## Folder Tree (max depth 3)
@@ -14,6 +14,8 @@ Generated at: 2026-04-24T23:28:49.870Z
 ├── .continue/
 │   └── context.md
 ├── .github/
+│   ├── workflows/
+│   │   └── deploy-pages.yml
 │   └── copilot-instructions.md
 ├── .tmp-fresh/
 │   ├── .continue/
@@ -36,25 +38,40 @@ Generated at: 2026-04-24T23:28:49.870Z
 ├── .tmp-no-context/
 ├── .vscode/
 │   └── tasks.json
+├── assets/
+│   ├── .gitkeep
+│   ├── ai-tools.png
+│   ├── auto-mode.png
+│   ├── banner.png
+│   ├── context-files.png
+│   ├── how-it-works.png
+│   └── token-optimization.png
+├── docs/
+│   └── index.html
 ├── src/
+│   ├── benchmark.ts
 │   ├── cli.ts
+│   ├── commit-message.ts
 │   ├── doctor.ts
 │   ├── graph.ts
 │   ├── indexer.ts
 │   ├── init.ts
 │   ├── redact.ts
+│   ├── strict-mode.ts
 │   ├── sync.ts
 │   ├── templates.ts
 │   ├── ui.ts
 │   ├── vscode-task.ts
+│   ├── vscodeTask.ts
 │   └── watcher.ts
 ├── .clinerules
 ├── .gitattributes
 ├── .gitignore
-├── .gitignroe
 ├── .npmignore
 ├── AGENTS.md
 ├── CLAUDE.md
+├── CONTRIBUTING.md
+├── LICENSE
 ├── package-lock.json
 ├── package.json
 ├── README.md
@@ -62,14 +79,18 @@ Generated at: 2026-04-24T23:28:49.870Z
 ```
 
 ## Detected Languages
-- Markdown: 13
-- TypeScript: 11
+- TypeScript: 15
+- Markdown: 14
 - JSON: 5
+- HTML: 1
+- YAML: 1
 
 ## Detected Frameworks
 - none
 
 ## Package Scripts
+- root#benchmark: node dist/cli.js benchmark
+- root#benchmark:docs-check: npm run build && node dist/cli.js benchmark --json --compact
 - root#build: tsc
 - root#clean: node -e "require('fs').rmSync('dist',{recursive:true,force:true})"
 - root#dev: tsc -w -p .

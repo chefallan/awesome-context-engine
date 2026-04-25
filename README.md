@@ -26,6 +26,7 @@ awesome-context-engine keeps repository context current for AI coding tools by c
 - [.awesome-context Structure](#awesome-context-structure)
 - [Auto Mode](#auto-mode)
 - [Example: CI Health Check](#example-ci-health-check)
+- [Example: Clean Commit Message Generation](#example-clean-commit-message-generation)
 - [Example: Strict Security Mode](#example-strict-security-mode)
 - [Example: A/B Token Savings Measurement](#example-ab-token-savings-measurement)
 - [Interpreting Results](#interpreting-results)
@@ -37,6 +38,7 @@ awesome-context-engine keeps repository context current for AI coding tools by c
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [Support](#support)
+- [Credits](#credits)
 - [License](#license)
 
 ## Install
@@ -71,6 +73,7 @@ npx awesome-context-engine sync
 npx awesome-context-engine auto
 npx awesome-context-engine doctor
 npx awesome-context-engine benchmark
+npx awesome-context-engine commit-msg
 ```
 
 ## What It Solves
@@ -103,6 +106,7 @@ awesome-context-engine solves this by:
 | `awesome-context-engine auto` | Start watcher mode (index -> sync on change) |
 | `awesome-context-engine doctor` | Validate setup health |
 | `awesome-context-engine benchmark` | Estimate token savings from compact context |
+| `awesome-context-engine commit-msg` | Suggest Clean Commit title/body from git changes |
 | `awesome-context-engine help` | Show command help |
 
 ## Flags
@@ -115,6 +119,7 @@ awesome-context-engine solves this by:
 | `--json` | Output `doctor` results as JSON |
 | `--compact` | Emit compact single-line JSON (with `--json`) |
 | `--strict` | Fail sync when secret-like content is detected before redaction |
+| `--breaking` | Add Clean Commit `!` marker for `commit-msg` when type supports breaking changes |
 
 ## How It Works
 
@@ -160,6 +165,16 @@ During `init`, the project can also install a VS Code task (`runOn: folderOpen`)
 ```bash
 npx awesome-context-engine doctor --json --compact
 ```
+
+## Example: Clean Commit Message Generation
+
+```bash
+npx awesome-context-engine commit-msg
+npx awesome-context-engine commit-msg --breaking
+```
+
+Use `--breaking` only when the change introduces an incompatible behavior or API change for users.
+The marker `!` is applied only for supported Clean Commit types: `new`, `update`, `remove`, and `security`.
 
 ## Example: Strict Security Mode
 
@@ -277,6 +292,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow and pull request
 
 - GitHub Issues for bugs and feature requests
 - GitHub Discussions for usage questions and ideas
+
+## Credits
+
+- Commit message standard inspired by [wgtechlabs/clean-commit](https://github.com/wgtechlabs/clean-commit)
+- Credits to [@wgtechlabs](https://github.com/wgtechlabs) and [@warengonzaga](https://github.com/warengonzaga)
 
 ## License
 

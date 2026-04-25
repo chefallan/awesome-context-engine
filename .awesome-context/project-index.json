@@ -1,13 +1,16 @@
 {
-  "generatedAt": "2026-04-24T23:26:34.839Z",
+  "generatedAt": "2026-04-25T01:23:45.215Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
-  "totalFiles": 25,
-  "totalDirectories": 5,
+  "totalFiles": 50,
+  "totalDirectories": 15,
   "byExtension": {
-    "[no-ext]": 5,
-    ".md": 5,
-    ".json": 4,
-    ".ts": 11
+    "[no-ext]": 8,
+    ".md": 14,
+    ".yml": 1,
+    ".json": 5,
+    ".png": 6,
+    ".html": 1,
+    ".ts": 15
   },
   "files": [
     {
@@ -31,19 +34,74 @@
       "mtimeMs": 1777069602829.3171
     },
     {
-      "path": ".gitignore",
-      "bytes": 878,
-      "mtimeMs": 1777072246163.6538
+      "path": ".github/workflows/deploy-pages.yml",
+      "bytes": 640,
+      "mtimeMs": 1777078555681.8447
     },
     {
-      "path": ".gitignroe",
-      "bytes": 131,
-      "mtimeMs": 1777071469758.313
+      "path": ".gitignore",
+      "bytes": 835,
+      "mtimeMs": 1777074207260.4204
     },
     {
       "path": ".npmignore",
       "bytes": 55,
       "mtimeMs": 1777071328884.9453
+    },
+    {
+      "path": ".tmp-fresh/.clinerules",
+      "bytes": 43,
+      "mtimeMs": 1777073224680.5332
+    },
+    {
+      "path": ".tmp-fresh/.continue/context.md",
+      "bytes": 131,
+      "mtimeMs": 1777073224680.5332
+    },
+    {
+      "path": ".tmp-fresh/.github/copilot-instructions.md",
+      "bytes": 425,
+      "mtimeMs": 1777073224677.536
+    },
+    {
+      "path": ".tmp-fresh/AGENTS.md",
+      "bytes": 416,
+      "mtimeMs": 1777073224678.5332
+    },
+    {
+      "path": ".tmp-fresh/CLAUDE.md",
+      "bytes": 425,
+      "mtimeMs": 1777073224679.5383
+    },
+    {
+      "path": ".tmp-fresh2/.clinerules",
+      "bytes": 43,
+      "mtimeMs": 1777073303742.8013
+    },
+    {
+      "path": ".tmp-fresh2/.continue/context.md",
+      "bytes": 131,
+      "mtimeMs": 1777073303742.8013
+    },
+    {
+      "path": ".tmp-fresh2/.github/copilot-instructions.md",
+      "bytes": 425,
+      "mtimeMs": 1777073303740.8
+    },
+    {
+      "path": ".tmp-fresh2/.vscode/tasks.json",
+      "bytes": 399,
+      "mtimeMs": 1777073306279.0002
+    },
+    {
+      "path": ".tmp-fresh2/AGENTS.md",
+      "bytes": 416,
+      "mtimeMs": 1777073303740.8
+    },
+    {
+      "path": ".tmp-fresh2/CLAUDE.md",
+      "bytes": 425,
+      "mtimeMs": 1777073303741.803
     },
     {
       "path": ".vscode/tasks.json",
@@ -56,9 +114,59 @@
       "mtimeMs": 1777069602832.4546
     },
     {
+      "path": "assets/.gitkeep",
+      "bytes": 0,
+      "mtimeMs": 1777073583708.949
+    },
+    {
+      "path": "assets/ai-tools.png",
+      "bytes": 1535565,
+      "mtimeMs": 1777074257211.8638
+    },
+    {
+      "path": "assets/auto-mode.png",
+      "bytes": 1024786,
+      "mtimeMs": 1777074372416.966
+    },
+    {
+      "path": "assets/banner.png",
+      "bytes": 1248849,
+      "mtimeMs": 1777074706777.7966
+    },
+    {
+      "path": "assets/context-files.png",
+      "bytes": 1408262,
+      "mtimeMs": 1777075082955.0054
+    },
+    {
+      "path": "assets/how-it-works.png",
+      "bytes": 1063317,
+      "mtimeMs": 1777074920370.1648
+    },
+    {
+      "path": "assets/token-optimization.png",
+      "bytes": 1027492,
+      "mtimeMs": 1777075191900.3816
+    },
+    {
       "path": "CLAUDE.md",
       "bytes": 425,
       "mtimeMs": 1777069602831.364
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "bytes": 1419,
+      "mtimeMs": 1777076065160.16
+    },
+    {
+      "path": "docs/index.html",
+      "bytes": 10388,
+      "mtimeMs": 1777078305232.8547
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1113,
+      "mtimeMs": 1777075484716.795
     },
     {
       "path": "package-lock.json",
@@ -67,28 +175,38 @@
     },
     {
       "path": "package.json",
-      "bytes": 897,
-      "mtimeMs": 1777073170926.0027
+      "bytes": 1034,
+      "mtimeMs": 1777079445413.214
     },
     {
       "path": "README.md",
-      "bytes": 944,
-      "mtimeMs": 1777073171446.918
+      "bytes": 10121,
+      "mtimeMs": 1777080222096.9685
+    },
+    {
+      "path": "src/benchmark.ts",
+      "bytes": 3170,
+      "mtimeMs": 1777077149902.5059
     },
     {
       "path": "src/cli.ts",
-      "bytes": 9030,
-      "mtimeMs": 1777073135394.8484
+      "bytes": 13200,
+      "mtimeMs": 1777080222096.9685
+    },
+    {
+      "path": "src/commit-message.ts",
+      "bytes": 12318,
+      "mtimeMs": 1777080222096.9685
     },
     {
       "path": "src/doctor.ts",
-      "bytes": 3896,
-      "mtimeMs": 1777073104518.3496
+      "bytes": 3895,
+      "mtimeMs": 1777073574555.505
     },
     {
       "path": "src/graph.ts",
-      "bytes": 11117,
-      "mtimeMs": 1777071713875.8142
+      "bytes": 11882,
+      "mtimeMs": 1777076547367.3135
     },
     {
       "path": "src/indexer.ts",
@@ -97,18 +215,23 @@
     },
     {
       "path": "src/init.ts",
-      "bytes": 5304,
-      "mtimeMs": 1777073104374.1736
+      "bytes": 8238,
+      "mtimeMs": 1777075484739.628
     },
     {
       "path": "src/redact.ts",
-      "bytes": 494,
-      "mtimeMs": 1777071226740.0852
+      "bytes": 2202,
+      "mtimeMs": 1777076547265.1284
+    },
+    {
+      "path": "src/strict-mode.ts",
+      "bytes": 606,
+      "mtimeMs": 1777076547265.1284
     },
     {
       "path": "src/sync.ts",
-      "bytes": 6894,
-      "mtimeMs": 1777071713809.1194
+      "bytes": 7720,
+      "mtimeMs": 1777076547265.1284
     },
     {
       "path": "src/templates.ts",
@@ -117,8 +240,8 @@
     },
     {
       "path": "src/ui.ts",
-      "bytes": 901,
-      "mtimeMs": 1777073104374.1736
+      "bytes": 934,
+      "mtimeMs": 1777073574555.505
     },
     {
       "path": "src/vscode-task.ts",
@@ -126,9 +249,14 @@
       "mtimeMs": 1777073104459.3599
     },
     {
+      "path": "src/vscodeTask.ts",
+      "bytes": 176,
+      "mtimeMs": 1777073574661.1357
+    },
+    {
       "path": "src/watcher.ts",
-      "bytes": 4395,
-      "mtimeMs": 1777073104374.1736
+      "bytes": 4772,
+      "mtimeMs": 1777076547265.1284
     },
     {
       "path": "tsconfig.json",

@@ -3,6 +3,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { runTokenBenchmark } from "./benchmark.js";
+import { generateCommitMessageSuggestion } from "./commit-message.js";
 import { runDoctor } from "./doctor.js";
 import { initProject, type InitResult } from "./init.js";
 import { indexProject } from "./indexer.js";
@@ -13,7 +14,7 @@ import { confirmPrompt, error, heading, info, secondary, success, warning } from
 import { ensureVscodeAutoTask } from "./vscodeTask.js";
 import { startAutoMode } from "./watcher.js";
 
-type Command = "init" | "index" | "sync" | "auto" | "doctor" | "benchmark" | "help";
+type Command = "init" | "index" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "help";
 
 type CliOptions = {
   yes: boolean;
@@ -22,6 +23,7 @@ type CliOptions = {
   json: boolean;
   compact: boolean;
   strict: boolean;
+  breaking: boolean;
 };
 
 type ParsedCli = {
@@ -45,7 +47,8 @@ function parseCli(argv: string[]): ParsedCli {
     verbose: false,
     json: false,
     compact: false,
-    strict: false
+    strict: false,
+    breaking: false
   };
 
   let command: Command | null = null;
@@ -81,6 +84,10 @@ function parseCli(argv: string[]): ParsedCli {
       options.strict = true;
       continue;
     }
+    if (arg === "--breaking") {
+      options.breaking = true;
+      continue;
+    }
     if (arg === "--help" || arg === "-h") {
       command = "help";
       continue;
@@ -92,7 +99,7 @@ function parseCli(argv: string[]): ParsedCli {
     }
 
     if (!command) {
-      if (["init", "index", "sync", "auto", "doctor", "benchmark", "help"].includes(arg)) {
+      if (["init", "index", "sync", "auto", "doctor", "benchmark", "commit-msg", "help"].includes(arg)) {
         command = arg as Command;
       } else {
         command = "help";
@@ -116,6 +123,7 @@ Usage:
   awesome-context-engine auto       Watch mode: index + sync on changes
   awesome-context-engine doctor     Check setup health
   awesome-context-engine benchmark  Estimate token savings (raw vs ai-context)
+  awesome-context-engine commit-msg Suggest Clean Commit title/body from git changes
 
 Flags:
   --yes, -y           Skip prompts and use defaults
@@ -124,6 +132,7 @@ Flags:
   --json              Output doctor results as JSON
   --compact           Output compact JSON (use with --json)
   --strict            Fail sync when secret-like content is detected before redaction
+  --breaking          Add Clean Commit breaking marker (!) for commit-msg when valid
 `);
 }
 
@@ -355,6 +364,41 @@ async function runBenchmarkCommand(rootDir: string, options: CliOptions): Promis
   }
 }
 
+async function runCommitMessageCommand(rootDir: string, options: CliOptions): Promise<void> {
+  const result = await generateCommitMessageSuggestion(rootDir, { breaking: options.breaking });
+
+  if (options.json) {
+    const indent = options.compact ? undefined : 2;
+    console.log(
+      JSON.stringify(
+        {
+          command: "commit-msg",
+          rootDir,
+          ...result
+        },
+        null,
+        indent
+      )
+    );
+    return;
+  }
+
+  heading("Commit Message Suggestion");
+  info(`Title: ${result.title}`);
+  console.log();
+  secondary("Description:");
+  for (const line of result.description) {
+    secondary(`- ${line}`);
+  }
+
+  if (options.verbose) {
+    console.log();
+    secondary(`Source: ${result.source}`);
+    secondary(`Based on: ${result.basedOn.subject}`);
+    secondary(`Changed files: ${result.changedFiles.join(", ")}`);
+  }
+}
+
 async function main(): Promise<void> {
   const rootDir = process.cwd();
   const parsed = parseCli(process.argv);
@@ -399,6 +443,10 @@ async function main(): Promise<void> {
       }
       case "benchmark": {
         await runBenchmarkCommand(rootDir, options);
+        break;
+      }
+      case "commit-msg": {
+        await runCommitMessageCommand(rootDir, options);
         break;
       }
       case "help":
