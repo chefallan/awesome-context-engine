@@ -1,0 +1,45 @@
+{
+  "name": "awesome-context-engine",
+  "version": "1.0.0",
+  "description": "Drop-in persistent context and memory layer for AI coding tools.",
+  "main": "./dist/cli.js",
+  "bin": {
+    "awesome-context-engine": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w -p .",
+    "start": "node dist/cli.js",
+    "benchmark": "node dist/cli.js benchmark",
+    "benchmark:docs-check": "npm run build && node dist/cli.js benchmark --json --compact",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "cli",
+    "context",
+    "memory",
+    "copilot",
+    "claude",
+    "cursor",
+    "codex"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.19.17",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.4.2",
+    "picocolors": "^1.1.1",
+    "ts-node": "^10.9.2"
+  }
+}

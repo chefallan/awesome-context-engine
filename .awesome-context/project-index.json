@@ -1,0 +1,140 @@
+{
+  "generatedAt": "2026-04-24T23:26:34.839Z",
+  "rootDir": "D:\\Github\\awesome-context-engine",
+  "totalFiles": 25,
+  "totalDirectories": 5,
+  "byExtension": {
+    "[no-ext]": 5,
+    ".md": 5,
+    ".json": 4,
+    ".ts": 11
+  },
+  "files": [
+    {
+      "path": ".clinerules",
+      "bytes": 388,
+      "mtimeMs": 1777069602830.3655
+    },
+    {
+      "path": ".continue/context.md",
+      "bytes": 427,
+      "mtimeMs": 1777069602831.364
+    },
+    {
+      "path": ".gitattributes",
+      "bytes": 66,
+      "mtimeMs": 1777069181189.6946
+    },
+    {
+      "path": ".github/copilot-instructions.md",
+      "bytes": 425,
+      "mtimeMs": 1777069602829.3171
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 878,
+      "mtimeMs": 1777072246163.6538
+    },
+    {
+      "path": ".gitignroe",
+      "bytes": 131,
+      "mtimeMs": 1777071469758.313
+    },
+    {
+      "path": ".npmignore",
+      "bytes": 55,
+      "mtimeMs": 1777071328884.9453
+    },
+    {
+      "path": ".vscode/tasks.json",
+      "bytes": 399,
+      "mtimeMs": 1777072731465.28
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 416,
+      "mtimeMs": 1777069602832.4546
+    },
+    {
+      "path": "CLAUDE.md",
+      "bytes": 425,
+      "mtimeMs": 1777069602831.364
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 22828,
+      "mtimeMs": 1777073170940.002
+    },
+    {
+      "path": "package.json",
+      "bytes": 897,
+      "mtimeMs": 1777073170926.0027
+    },
+    {
+      "path": "README.md",
+      "bytes": 944,
+      "mtimeMs": 1777073171446.918
+    },
+    {
+      "path": "src/cli.ts",
+      "bytes": 9030,
+      "mtimeMs": 1777073135394.8484
+    },
+    {
+      "path": "src/doctor.ts",
+      "bytes": 3896,
+      "mtimeMs": 1777073104518.3496
+    },
+    {
+      "path": "src/graph.ts",
+      "bytes": 11117,
+      "mtimeMs": 1777071713875.8142
+    },
+    {
+      "path": "src/indexer.ts",
+      "bytes": 14712,
+      "mtimeMs": 1777073104374.1736
+    },
+    {
+      "path": "src/init.ts",
+      "bytes": 5304,
+      "mtimeMs": 1777073104374.1736
+    },
+    {
+      "path": "src/redact.ts",
+      "bytes": 494,
+      "mtimeMs": 1777071226740.0852
+    },
+    {
+      "path": "src/sync.ts",
+      "bytes": 6894,
+      "mtimeMs": 1777071713809.1194
+    },
+    {
+      "path": "src/templates.ts",
+      "bytes": 1410,
+      "mtimeMs": 1777071226727.933
+    },
+    {
+      "path": "src/ui.ts",
+      "bytes": 901,
+      "mtimeMs": 1777073104374.1736
+    },
+    {
+      "path": "src/vscode-task.ts",
+      "bytes": 3900,
+      "mtimeMs": 1777073104459.3599
+    },
+    {
+      "path": "src/watcher.ts",
+      "bytes": 4395,
+      "mtimeMs": 1777073104374.1736
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 469,
+      "mtimeMs": 1777071713808.1091
+    }
+  ],
+  "truncated": false
+}
