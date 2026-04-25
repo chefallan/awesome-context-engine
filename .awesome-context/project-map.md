@@ -1,10 +1,10 @@
 # Project Map
 
-Generated at: 2026-04-25T05:34:43.905Z
+Generated at: 2026-04-25T08:25:40.498Z
 
 ## Repository Snapshot
-- Total files: 52
-- Total directories: 15
+- Total files: 53
+- Total directories: 16
 - Truncated scan: no
 
 ## Folder Tree (max depth 3)
@@ -48,6 +48,8 @@ Generated at: 2026-04-25T05:34:43.905Z
 │   └── token-optimization.png
 ├── docs/
 │   └── index.html
+├── scripts/
+│   └── release.mjs
 ├── src/
 │   ├── benchmark.ts
 │   ├── cli.ts
@@ -85,6 +87,7 @@ Generated at: 2026-04-25T05:34:43.905Z
 - Markdown: 14
 - JSON: 5
 - HTML: 1
+- JavaScript: 1
 - YAML: 1
 
 ## Detected Frameworks
@@ -97,6 +100,7 @@ Generated at: 2026-04-25T05:34:43.905Z
 - root#clean: node -e "require('fs').rmSync('dist',{recursive:true,force:true})"
 - root#dev: tsc -w -p .
 - root#prepublishOnly: npm run build
+- root#release: node scripts/release.mjs
 - root#start: node dist/cli.js
 
 ## Important Config Files

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-04-25T05:34:43.905Z",
+  "generatedAt": "2026-04-25T08:25:40.498Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
-  "totalFiles": 52,
-  "totalDirectories": 15,
+  "totalFiles": 53,
+  "totalDirectories": 16,
   "byExtension": {
     "[no-ext]": 8,
     ".md": 14,
@@ -10,6 +10,7 @@
     ".json": 5,
     ".png": 6,
     ".html": 1,
+    ".mjs": 1,
     ".ts": 17
   },
   "files": [
@@ -161,7 +162,7 @@
     {
       "path": "docs/index.html",
       "bytes": 16719,
-      "mtimeMs": 1777094821166.0776
+      "mtimeMs": 1777102151125.8032
     },
     {
       "path": "LICENSE",
@@ -170,18 +171,23 @@
     },
     {
       "path": "package-lock.json",
-      "bytes": 22828,
-      "mtimeMs": 1777095280875.861
+      "bytes": 23819,
+      "mtimeMs": 1777105526211.9333
     },
     {
       "path": "package.json",
-      "bytes": 1034,
-      "mtimeMs": 1777095280874.8574
+      "bytes": 1117,
+      "mtimeMs": 1777105537478.492
     },
     {
       "path": "README.md",
-      "bytes": 12779,
-      "mtimeMs": 1777094821093.2146
+      "bytes": 13287,
+      "mtimeMs": 1777102144303.2258
+    },
+    {
+      "path": "scripts/release.mjs",
+      "bytes": 6843,
+      "mtimeMs": 1777102960868.3174
     },
     {
       "path": "src/benchmark.ts",
@@ -190,8 +196,8 @@
     },
     {
       "path": "src/cli.ts",
-      "bytes": 17285,
-      "mtimeMs": 1777093203559.1306
+      "bytes": 22408,
+      "mtimeMs": 1777104241618.0735
     },
     {
       "path": "src/commit-message.ts",
@@ -251,7 +257,7 @@
     {
       "path": "src/ui.ts",
       "bytes": 934,
-      "mtimeMs": 1777073574555.505
+      "mtimeMs": 1777102117666.9268
     },
     {
       "path": "src/vscode-task.ts",

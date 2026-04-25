@@ -219,6 +219,18 @@ When there are no staged or working-tree changes, `commit-msg` now falls back au
 Use `--breaking` only when the change introduces an incompatible behavior or API change for users.
 The marker `!` is applied only for supported Clean Commit types: `new`, `update`, `remove`, and `security`.
 
+## Example: Interactive Release Flow
+
+```bash
+npm run release
+npm run release -- patch
+npm run release -- minor
+npm run release -- major
+```
+
+The release flow is a repo-only script (`package.json`), not a public CLI command. It asks whether the bump should be `patch`, `minor`, or `major` when no bump argument is provided, then performs the full sequence automatically:
+publish to public npm, update the installed package, commit with the generated `commit-msg` title/body, and push to GitHub.
+
 ## Example: End Of Day (EOD) Report
 
 ```bash

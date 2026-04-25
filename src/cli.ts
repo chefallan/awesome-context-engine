@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
+import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { runTokenBenchmark } from "./benchmark.js";
 import { generateCommitMessageSuggestion } from "./commit-message.js";
 import { runDoctor } from "./doctor.js";
@@ -16,7 +19,9 @@ import { confirmPrompt, error, heading, info, secondary, success, warning } from
 import { ensureVscodeAutoTask } from "./vscodeTask.js";
 import { startAutoMode } from "./watcher.js";
 
-type Command = "init" | "index" | "scan" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "eod-report" | "help";
+const execFileAsync = promisify(execFile);
+
+type Command = "init" | "index" | "scan" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "eod-report" | "version" | "help";
 
 type CliOptions = {
   yes: boolean;
@@ -109,7 +114,7 @@ function parseCli(argv: string[]): ParsedCli {
     }
 
     if (!command) {
-      if (["init", "index", "scan", "sync", "auto", "doctor", "benchmark", "commit-msg", "eod-report", "help"].includes(arg)) {
+      if (["init", "index", "scan", "sync", "auto", "doctor", "benchmark", "commit-msg", "eod-report", "version", "help"].includes(arg)) {
         command = arg as Command;
       } else {
         command = "help";
@@ -139,6 +144,7 @@ Usage:
   awesome-context-engine benchmark  Estimate token savings (raw vs ai-context)
   awesome-context-engine commit-msg Suggest Clean Commit title/body for EOD reporting
   awesome-context-engine eod-report <date>  Generate EOD report from commits (YYYY-MM-DD)
+  awesome-context-engine version    Show running/project/global/latest versions
 
 Flags:
   --yes, -y           Skip prompts and use defaults
@@ -474,6 +480,152 @@ async function runEodReportCommand(rootDir: string, options: CliOptions, command
   }
 }
 
+type PackageJsonLike = {
+  name?: string;
+  version?: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
+
+function npmCommand(): { command: string; argsPrefix: string[] } {
+  if (process.platform === "win32") {
+    return {
+      command: "cmd.exe",
+      argsPrefix: ["/d", "/s", "/c", "npm.cmd"]
+    };
+  }
+
+  return {
+    command: "npm",
+    argsPrefix: []
+  };
+}
+
+async function runNpm(args: string[], cwd: string): Promise<string> {
+  const npm = npmCommand();
+  const { stdout } = await execFileAsync(npm.command, [...npm.argsPrefix, ...args], { cwd });
+  return String(stdout ?? "").trim();
+}
+
+async function readPackageJson(filePath: string): Promise<PackageJsonLike | null> {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    return JSON.parse(raw) as PackageJsonLike;
+  } catch {
+    return null;
+  }
+}
+
+async function getOwnVersion(rootDir: string): Promise<string> {
+  const currentFile = fileURLToPath(import.meta.url);
+  const ownPackagePath = path.resolve(path.dirname(currentFile), "..", "package.json");
+  const ownPkg = await readPackageJson(ownPackagePath);
+
+  if (ownPkg?.version) {
+    return ownPkg.version;
+  }
+
+  const rootPkg = await readPackageJson(path.join(rootDir, "package.json"));
+  return rootPkg?.version ?? "unknown";
+}
+
+async function getProjectInstalledVersion(rootDir: string, packageName: string): Promise<string> {
+  const rootPkg = await readPackageJson(path.join(rootDir, "package.json"));
+  if (rootPkg?.name === packageName && rootPkg.version) {
+    return rootPkg.version;
+  }
+
+  const depVersion = rootPkg?.dependencies?.[packageName] ?? rootPkg?.devDependencies?.[packageName];
+  if (depVersion) {
+    return depVersion;
+  }
+
+  try {
+    const raw = await runNpm(["list", packageName, "--depth=0", "--json"], rootDir);
+    const parsed = JSON.parse(raw) as { dependencies?: Record<string, { version?: string }> };
+    return parsed.dependencies?.[packageName]?.version ?? "not installed in project";
+  } catch {
+    return "not installed in project";
+  }
+}
+
+async function getGlobalInstalledVersion(rootDir: string, packageName: string): Promise<string> {
+  try {
+    const raw = await runNpm(["list", "-g", packageName, "--depth=0", "--json"], rootDir);
+    const parsed = JSON.parse(raw) as { dependencies?: Record<string, { version?: string }> };
+    return parsed.dependencies?.[packageName]?.version ?? "not installed globally";
+  } catch {
+    return "not installed globally";
+  }
+}
+
+async function getLatestNpmVersion(rootDir: string, packageName: string): Promise<string> {
+  try {
+    const latest = await runNpm(["view", packageName, "version"], rootDir);
+    return latest || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+function compareVersions(v1: string, v2: string): number {
+  if (v1 === "unknown" || v2 === "unknown" || v1 === "not installed in project" || v2 === "not installed in project" || v1 === "not installed globally" || v2 === "not installed globally") {
+    return 0;
+  }
+
+  const parse = (v: string) => v.split(".").map(x => parseInt(x, 10) || 0);
+  const parts1 = parse(v1);
+  const parts2 = parse(v2);
+
+  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const p1 = parts1[i] ?? 0;
+    const p2 = parts2[i] ?? 0;
+    if (p1 < p2) return -1;
+    if (p1 > p2) return 1;
+  }
+
+  return 0;
+}
+
+async function runVersionCommand(rootDir: string): Promise<void> {
+  const packageName = "awesome-context-engine";
+
+  const [runningVersion, projectVersion, globalVersion, latestVersion] = await Promise.all([
+    getOwnVersion(rootDir),
+    getProjectInstalledVersion(rootDir, packageName),
+    getGlobalInstalledVersion(rootDir, packageName),
+    getLatestNpmVersion(rootDir, packageName)
+  ]);
+
+  heading("Version Info");
+  info(`Running CLI: ${runningVersion}`);
+  info(`Project: ${projectVersion}`);
+  info(`Global (PC): ${globalVersion}`);
+  info(`npm latest: ${latestVersion}`);
+
+  const updates: string[] = [];
+
+  if (compareVersions(runningVersion, latestVersion) < 0 && runningVersion !== "unknown") {
+    updates.push(`npm install -g ${packageName}@latest`);
+  }
+
+  if (compareVersions(projectVersion, latestVersion) < 0 && !projectVersion.includes("not installed")) {
+    updates.push(`npm update ${packageName}`);
+  }
+
+  if (compareVersions(globalVersion, latestVersion) < 0 && !globalVersion.includes("not installed")) {
+    updates.push(`npm install -g ${packageName}@latest`);
+  }
+
+  if (updates.length > 0) {
+    console.log("");
+    heading("Updates available:");
+    for (const cmd of updates) {
+      info(`  ${cmd}`);
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const rootDir = process.cwd();
   const parsed = parseCli(process.argv);
@@ -557,6 +709,10 @@ async function main(): Promise<void> {
       }
       case "eod-report": {
         await runEodReportCommand(rootDir, options, commandArgs);
+        break;
+      }
+      case "version": {
+        await runVersionCommand(rootDir);
         break;
       }
       case "help":
