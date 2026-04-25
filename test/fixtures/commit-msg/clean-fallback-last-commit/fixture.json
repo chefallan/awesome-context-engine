@@ -1,0 +1,12 @@
+{
+  "commits": [
+    {
+      "snapshot": "base",
+      "message": "docs: initial readme"
+    },
+    {
+      "snapshot": "latest",
+      "message": "docs: expand contribution guide"
+    }
+  ]
+}

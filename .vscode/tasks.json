@@ -4,7 +4,7 @@
     {
       "label": "awesome-context auto",
       "type": "shell",
-      "command": "npx awesome-context-engine auto",
+      "command": "npx --yes awesome-context-engine@latest auto",
       "isBackground": true,
       "problemMatcher": [],
       "runOptions": {

@@ -22,11 +22,13 @@ type TasksFile = {
 
 export const AUTO_TASK_LABEL = "awesome-context auto";
 
+const AUTO_TASK_COMMAND = "npx --yes awesome-context-engine@latest auto";
+
 export function getAutoTaskDefinition(): TaskDefinition {
   return {
     label: AUTO_TASK_LABEL,
     type: "shell",
-    command: "npx awesome-context-engine auto",
+    command: AUTO_TASK_COMMAND,
     isBackground: true,
     problemMatcher: [],
     runOptions: {

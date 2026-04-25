@@ -1,0 +1,9 @@
+{
+  "commits": [
+    {
+      "snapshot": "base",
+      "message": "chore: base fixture"
+    }
+  ],
+  "workspace": "workspace"
+}

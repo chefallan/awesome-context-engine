@@ -1,0 +1,7 @@
+{
+  "name": "fixture-script-focus",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc"
+  }
+}

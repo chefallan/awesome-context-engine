@@ -65,7 +65,7 @@ Compatibility notes:
 - Requires Node.js 18 or later
 - Uses Node APIs and npm scripts that work across major operating systems
 - Auto mode falls back gracefully when recursive file watching is not available on a platform
-- VS Code auto-task integration works with the standard `npx` command on all supported systems
+- VS Code auto-task integration uses `npx --yes awesome-context-engine@latest auto` so a fresh machine can self-bootstrap without a prior install
 
 ## Quick Commands
 
@@ -183,6 +183,8 @@ npx awesome-context-engine auto
 
 During `init`, the project can also install a VS Code task (`runOn: folderOpen`) so context refresh starts automatically when the workspace opens.
 
+That task uses `npx --yes awesome-context-engine@latest auto`, so on a new device it can download the CLI on first run instead of depending on a preinstalled package.
+
 `init` now also runs an automatic baseline scan, so existing repositories immediately get starter context in
 `.awesome-context/memory.md`, `.awesome-context/workflows.md`, `.awesome-context/decisions.md`, and `.awesome-context/preferences.md`.
 
@@ -214,7 +216,7 @@ npx awesome-context-engine commit-msg
 npx awesome-context-engine commit-msg --breaking
 ```
 
-When there are no staged or working-tree changes, `commit-msg` now falls back automatically to the latest meaningful commit so it can still suggest a concrete title and description.
+`commit-msg` now summarizes the current workspace delta first: on normal repositories it compares local changes against `HEAD`, and on brand-new repositories with no commits it treats the current files as the initial snapshot. If the workspace is clean, it falls back automatically to the latest meaningful commit so it can still suggest a concrete title and description.
 
 Use `--breaking` only when the change introduces an incompatible behavior or API change for users.
 The marker `!` is applied only for supported Clean Commit types: `new`, `update`, `remove`, and `security`.

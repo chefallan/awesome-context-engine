@@ -1,9 +1,11 @@
 import { execFile } from "node:child_process";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-type GitChangeSource = "staged" | "working-tree" | "status" | "last-commit";
+type GitChangeSource = "workspace" | "initial-workspace" | "last-commit";
 
 const IGNORED_CHANGE_PREFIXES = [".awesome-context/", "dist/"];
 
@@ -16,6 +18,12 @@ type GitChange = {
   status: GitChangeStatus;
 };
 
+type GitHistoryInfo = {
+  hasCommits: boolean;
+  basedOn: LastCommitInfo;
+  diffBase: string | null;
+};
+
 type DiffMetrics = {
   additions: number;
   deletions: number;
@@ -26,6 +34,8 @@ type DiffMetrics = {
 };
 
 type RiskLevel = "low" | "medium" | "high";
+
+const EMPTY_TREE_HASH = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 const CLEAN_COMMIT_EMOJI: Record<CleanCommitType, string> = {
   new: "📦",
@@ -70,6 +80,19 @@ function normalizePath(input: string): string {
 async function runGit(rootDir: string, args: string[]): Promise<string> {
   const { stdout } = await execFileAsync("git", args, { cwd: rootDir });
   return String(stdout ?? "").trim();
+}
+
+function isNoCommitHistoryError(error: unknown): boolean {
+  const message = (error as Error)?.message ?? "";
+  const stderr = typeof (error as { stderr?: unknown })?.stderr === "string" ? (error as { stderr: string }).stderr : "";
+  const combined = `${message}\n${stderr}`.toLowerCase();
+
+  return [
+    "does not have any commits yet",
+    "bad revision 'head'",
+    "ambiguous argument 'head'",
+    "needed a single revision"
+  ].some((needle) => combined.includes(needle));
 }
 
 function parsePrefixFromSubject(subject: string): string {
@@ -136,6 +159,32 @@ async function getLastCommitInfo(rootDir: string): Promise<LastCommitInfo> {
   };
 }
 
+async function getGitHistoryInfo(rootDir: string): Promise<GitHistoryInfo> {
+  try {
+    await runGit(rootDir, ["rev-parse", "--verify", "HEAD"]);
+    const basedOn = await getLastCommitInfo(rootDir);
+    return {
+      hasCommits: true,
+      basedOn,
+      diffBase: "HEAD"
+    };
+  } catch (error) {
+    if (!isNoCommitHistoryError(error)) {
+      throw error;
+    }
+
+    return {
+      hasCommits: false,
+      basedOn: {
+        hash: EMPTY_TREE_HASH,
+        subject: "initial workspace snapshot (no commits yet)",
+        prefix: "setup"
+      },
+      diffBase: EMPTY_TREE_HASH
+    };
+  }
+}
+
 function getTopAreas(files: string[]): string[] {
   const counts = new Map<string, number>();
 
@@ -156,11 +205,76 @@ type ConcreteChangeSummary = {
   highlights: string[];
 };
 
+type FocusKind = "command" | "script" | "config" | "function" | "class" | "type" | "interface";
+
+type FocusCandidate = {
+  kind: FocusKind;
+  label: string;
+  score: number;
+};
+
+const KNOWN_COMMANDS = new Set([
+  "init",
+  "index",
+  "scan",
+  "sync",
+  "auto",
+  "doctor",
+  "benchmark",
+  "commit-msg",
+  "eod-report",
+  "version",
+  "help"
+]);
+
+const KNOWN_SCRIPT_KEYS = new Set(["build", "dev", "start", "test", "lint", "release", "prepare", "prepublishOnly"]);
+
+const GENERIC_CONFIG_KEYS = new Set([
+  "name",
+  "version",
+  "description",
+  "author",
+  "license",
+  "files",
+  "keywords",
+  "main",
+  "type",
+  "bin",
+  "scripts",
+  "dependencies",
+  "devDependencies",
+  "engines",
+  "compilerOptions",
+  "include",
+  "exclude"
+]);
+
+const GENERIC_SYMBOL_NAMES = new Set([
+  "data",
+  "result",
+  "results",
+  "item",
+  "items",
+  "value",
+  "values",
+  "options",
+  "option",
+  "config",
+  "default",
+  "rootDir",
+  "file",
+  "files",
+  "line",
+  "lines",
+  "message",
+  "messages"
+]);
+
 async function getChangePatchText(
   rootDir: string,
   source: GitChangeSource,
   files: string[],
-  lastCommitHash: string
+  diffBase: string | null
 ): Promise<string> {
   if (files.length === 0) {
     return "";
@@ -168,17 +282,75 @@ async function getChangePatchText(
 
   const gitFiles = files.map((file) => normalizePath(file));
 
-  if (source === "staged") {
-    return runGit(rootDir, ["diff", "--cached", "--unified=0", "--", ...gitFiles]);
+  if (source === "workspace" && diffBase) {
+    return runGit(rootDir, ["diff", "--unified=0", diffBase, "--", ...gitFiles]);
   }
-  if (source === "working-tree") {
-    return runGit(rootDir, ["diff", "--unified=0", "--", ...gitFiles]);
-  }
-  if (source === "last-commit") {
-    return runGit(rootDir, ["show", "--format=", "--unified=0", lastCommitHash, "--", ...gitFiles]);
+  if (source === "last-commit" && diffBase) {
+    return runGit(rootDir, ["show", "--format=", "--unified=0", diffBase, "--", ...gitFiles]);
   }
 
   return "";
+}
+
+function parsePorcelainPath(line: string): string {
+  const candidate = line.length > 3 ? line.slice(3) : "";
+  const renamed = candidate.includes(" -> ") ? candidate.split(" -> ").at(-1) ?? candidate : candidate;
+  return normalizePath(renamed.trim());
+}
+
+function parseUntrackedStatusChanges(raw: string): GitChange[] {
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter((line) => line.startsWith("?? "))
+    .map((line) => ({
+      path: parsePorcelainPath(line),
+      status: "?" as GitChangeStatus
+    }))
+    .filter((change) => Boolean(change.path));
+}
+
+async function fileExists(rootDir: string, relativePath: string): Promise<boolean> {
+  try {
+    await fs.access(path.join(rootDir, normalizePath(relativePath)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function getInitialWorkspaceChanges(rootDir: string, statusRaw: string): Promise<GitChange[]> {
+  const candidates = statusRaw
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .map(parsePorcelainPath)
+    .filter(Boolean);
+
+  const existing = await Promise.all(
+    candidates.map(async (candidate) => ({
+      path: candidate,
+      exists: await fileExists(rootDir, candidate)
+    }))
+  );
+
+  return existing.filter((entry) => entry.exists).map((entry) => ({ path: entry.path, status: "A" as GitChangeStatus }));
+}
+
+function mergeChanges(primary: GitChange[], additional: GitChange[]): GitChange[] {
+  const seen = new Set(primary.map((change) => normalizePath(change.path)));
+  const merged = [...primary];
+
+  for (const change of additional) {
+    const normalized = normalizePath(change.path);
+    if (seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    merged.push(change);
+  }
+
+  return merged;
 }
 
 function inferConcreteChangeSummary(files: string[], diffText = ""): ConcreteChangeSummary | null {
@@ -246,10 +418,153 @@ function inferConcreteChangeSummary(files: string[], diffText = ""): ConcreteCha
   return null;
 }
 
-function inferAction(files: string[]): string {
+function addFocusCandidate(candidates: Map<string, FocusCandidate>, kind: FocusKind, rawLabel: string, score: number): void {
+  const label = rawLabel.trim().replace(/^['"`]+|['"`]+$/g, "");
+  if (!label || label.length < 2) {
+    return;
+  }
+
+  const normalizedKey = `${kind}:${label.toLowerCase()}`;
+  if (["function", "class", "type", "interface"].includes(kind) && GENERIC_SYMBOL_NAMES.has(label)) {
+    return;
+  }
+
+  const existing = candidates.get(normalizedKey);
+  if (existing) {
+    existing.score += score;
+    return;
+  }
+
+  candidates.set(normalizedKey, { kind, label, score });
+}
+
+function extractFocusFromDiff(files: string[], diffText: string): FocusCandidate | null {
+  if (!diffText.trim()) {
+    return null;
+  }
+
+  const candidates = new Map<string, FocusCandidate>();
+  const addedScriptKeys = new Set<string>();
+  const removedScriptKeys = new Set<string>();
+  const normalizedFiles = files.map((file) => normalizePath(file).toLowerCase());
+  const touchesPackageJson = normalizedFiles.includes("package.json");
+  const touchesConfig = normalizedFiles.some((file) => file === "package.json" || file === "tsconfig.json" || file.startsWith(".github/"));
+
+  for (const line of diffText.split(/\r?\n/)) {
+    if (!/^[+-]/.test(line) || /^(\+\+\+|---|@@)/.test(line)) {
+      continue;
+    }
+
+    const weight = line.startsWith("+") ? 3 : 1;
+    const code = line.slice(1).trim();
+    if (!code) {
+      continue;
+    }
+
+    const commandMatch = code.match(/\b(?:case|command(?:Id)?)\s*[: ]\s*["'`]([a-z0-9-]+)["'`]/i);
+    if (commandMatch && KNOWN_COMMANDS.has(commandMatch[1])) {
+      addFocusCandidate(candidates, "command", commandMatch[1], weight + 4);
+    }
+
+    const cliCommandMatch = code.match(/awesome-context-engine\s+([a-z0-9-]+)/i);
+    if (cliCommandMatch && KNOWN_COMMANDS.has(cliCommandMatch[1])) {
+      addFocusCandidate(candidates, "command", cliCommandMatch[1], weight + 3);
+    }
+
+    const functionPatterns = [
+      /(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)/,
+      /(?:export\s+)?(?:const|let|var)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_][A-Za-z0-9_]*)\s*=>/
+    ];
+    for (const pattern of functionPatterns) {
+      const match = code.match(pattern);
+      if (match) {
+        addFocusCandidate(candidates, "function", match[1], weight + 2);
+      }
+    }
+
+    const classMatch = code.match(/(?:export\s+)?class\s+([A-Za-z_][A-Za-z0-9_]*)/);
+    if (classMatch) {
+      addFocusCandidate(candidates, "class", classMatch[1], weight + 2);
+    }
+
+    const interfaceMatch = code.match(/interface\s+([A-Za-z_][A-Za-z0-9_]*)/);
+    if (interfaceMatch) {
+      addFocusCandidate(candidates, "interface", interfaceMatch[1], weight + 1);
+    }
+
+    const typeMatch = code.match(/type\s+([A-Za-z_][A-Za-z0-9_]*)\s*=/);
+    if (typeMatch) {
+      addFocusCandidate(candidates, "type", typeMatch[1], weight + 1);
+    }
+
+    const jsonKeyMatch = code.match(/^"([A-Za-z0-9:_-]+)"\s*:/);
+    if (jsonKeyMatch) {
+      const key = jsonKeyMatch[1];
+      if (touchesPackageJson && KNOWN_SCRIPT_KEYS.has(key)) {
+        if (line.startsWith("+")) {
+          addedScriptKeys.add(key);
+        }
+        if (line.startsWith("-")) {
+          removedScriptKeys.add(key);
+        }
+        addFocusCandidate(candidates, "script", key, weight + 4);
+      } else if (touchesConfig && !GENERIC_CONFIG_KEYS.has(key)) {
+        addFocusCandidate(candidates, "config", key, weight + 1);
+      }
+    }
+  }
+
+  const addedOnlyScripts = [...candidates.values()].filter(
+    (candidate) => candidate.kind === "script" && addedScriptKeys.has(candidate.label) && !removedScriptKeys.has(candidate.label)
+  );
+  if (addedOnlyScripts.length > 0) {
+    return addedOnlyScripts.sort((left, right) => right.score - left.score || left.label.localeCompare(right.label))[0] ?? null;
+  }
+
+  return [...candidates.values()].sort((left, right) => right.score - left.score || left.label.localeCompare(right.label))[0] ?? null;
+}
+
+function inferFocusedAction(type: CleanCommitType, focus: FocusCandidate): string {
+  const verb = (() => {
+    switch (type) {
+      case "new":
+        return "add";
+      case "remove":
+        return "remove";
+      case "docs":
+        return "document";
+      case "security":
+        return focus.kind === "config" ? "harden" : "secure";
+      case "setup":
+      case "chore":
+        return focus.kind === "script" || focus.kind === "config" || focus.kind === "command" ? "update" : "improve";
+      default:
+        return focus.kind === "script" || focus.kind === "config" || focus.kind === "command" ? "update" : "improve";
+    }
+  })();
+
+  if (focus.kind === "command") {
+    return `${verb} ${focus.label} command`;
+  }
+  if (focus.kind === "script") {
+    return `${verb} ${focus.label} script`;
+  }
+  if (focus.kind === "config") {
+    return `${verb} ${focus.label.replace(/[-_]/g, " ")} config`;
+  }
+
+  return `${verb} ${focus.label}`;
+}
+
+function inferAction(files: string[], diffText: string, type: CleanCommitType): string {
   const concreteSummary = inferConcreteChangeSummary(files);
   if (concreteSummary) {
     return concreteSummary.action;
+  }
+
+  const focus = extractFocusFromDiff(files, diffText);
+  if (focus) {
+    return inferFocusedAction(type, focus);
   }
 
   const normalized = files.map((file) => normalizePath(file).toLowerCase());
@@ -273,6 +588,32 @@ function inferAction(files: string[]): string {
   }
 
   return "apply repository updates";
+}
+
+function inferInitialAction(files: string[]): string {
+  const normalized = files.map((file) => normalizePath(file).toLowerCase());
+  const hasSrc = normalized.some((file) => file.startsWith("src/"));
+  const hasReadme = normalized.includes("readme.md");
+  const hasDocs = normalized.some((file) => file.startsWith("docs/"));
+  const hasPackageJson = normalized.includes("package.json") || normalized.includes("package-lock.json");
+  const hasConfig = normalized.some((file) =>
+    ["package.json", "package-lock.json", "tsconfig.json", ".gitignore", ".npmignore"].includes(file)
+  );
+
+  if (hasSrc && hasPackageJson) {
+    return "bootstrap initial project structure";
+  }
+  if (hasSrc && (hasReadme || hasDocs)) {
+    return "create initial source and documentation";
+  }
+  if (hasSrc) {
+    return "add initial source files";
+  }
+  if (hasConfig) {
+    return "bootstrap repository configuration";
+  }
+
+  return "create initial repository files";
 }
 
 function parseNameStatusOutput(raw: string): GitChange[] {
@@ -340,19 +681,54 @@ function parseNumStat(raw: string): { additions: number; deletions: number } {
   return { additions, deletions };
 }
 
-async function getDiffMetrics(rootDir: string, source: GitChangeSource, changes: GitChange[]): Promise<DiffMetrics> {
+function countLines(content: string): number {
+  if (!content) {
+    return 0;
+  }
+
+  const normalized = content.replace(/\r\n/g, "\n");
+  if (normalized.includes("\u0000")) {
+    return 0;
+  }
+
+  return normalized.split("\n").length;
+}
+
+async function countCurrentFileLines(rootDir: string, files: string[]): Promise<number> {
+  const counts = await Promise.all(
+    files.map(async (file) => {
+      try {
+        const content = await fs.readFile(path.join(rootDir, normalizePath(file)), "utf8");
+        return countLines(content);
+      } catch {
+        return 0;
+      }
+    })
+  );
+
+  return counts.reduce((sum, count) => sum + count, 0);
+}
+
+async function getDiffMetrics(
+  rootDir: string,
+  source: GitChangeSource,
+  changes: GitChange[],
+  diffBase: string | null
+): Promise<DiffMetrics> {
   let additions = 0;
   let deletions = 0;
 
-  if (source === "staged") {
-    const raw = await runGit(rootDir, ["diff", "--numstat", "--cached"]);
+  if (source === "workspace" && diffBase) {
+    const raw = await runGit(rootDir, ["diff", "--numstat", diffBase]);
     ({ additions, deletions } = parseNumStat(raw));
-  } else if (source === "working-tree") {
-    const raw = await runGit(rootDir, ["diff", "--numstat"]);
-    ({ additions, deletions } = parseNumStat(raw));
-  } else if (source === "last-commit") {
-    const lastCommit = await getLastCommitInfo(rootDir);
-    const raw = await runGit(rootDir, ["show", "--numstat", "--format=", lastCommit.hash]);
+    additions += await countCurrentFileLines(
+      rootDir,
+      changes.filter((change) => change.status === "?").map((change) => change.path)
+    );
+  } else if (source === "initial-workspace") {
+    additions = await countCurrentFileLines(rootDir, changes.map((change) => change.path));
+  } else if (source === "last-commit" && diffBase) {
+    const raw = await runGit(rootDir, ["show", "--numstat", "--format=", diffBase]);
     ({ additions, deletions } = parseNumStat(raw));
   }
 
@@ -614,72 +990,57 @@ function clipTitle(input: string, maxLength: number): string {
   return `${input.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-async function getChangedFiles(rootDir: string): Promise<{ source: GitChangeSource; files: string[]; changes: GitChange[] }> {
-  const stagedRaw = await runGit(rootDir, ["diff", "--name-status", "--cached"]);
-  const stagedChanges = parseNameStatusOutput(stagedRaw);
-  if (stagedChanges.length > 0) {
-    const filteredChanges = filterIgnoredGitChanges(stagedChanges);
-    if (filteredChanges.length > 0) {
-      return {
-        source: "staged",
-        files: filterIgnoredChanges(unique(filteredChanges.map((change) => normalizePath(change.path)))),
-        changes: filteredChanges
-      };
-    }
-  }
+async function getChangedFiles(
+  rootDir: string,
+  history: GitHistoryInfo
+): Promise<{ source: GitChangeSource; files: string[]; changes: GitChange[]; diffBase: string | null }> {
+  const statusRaw = await runGit(rootDir, ["status", "--porcelain", "--untracked-files=all"]);
 
-  const workingTreeRaw = await runGit(rootDir, ["diff", "--name-status"]);
-  const workingTreeChanges = parseNameStatusOutput(workingTreeRaw);
-  if (workingTreeChanges.length > 0) {
-    const filteredChanges = filterIgnoredGitChanges(workingTreeChanges);
-    if (filteredChanges.length > 0) {
-      return {
-        source: "working-tree",
-        files: filterIgnoredChanges(unique(filteredChanges.map((change) => normalizePath(change.path)))),
-        changes: filteredChanges
-      };
-    }
-  }
-
-  const statusRaw = await runGit(rootDir, ["status", "--porcelain"]);
-  const statusFiles = statusRaw
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const candidate = line.length > 3 ? line.slice(3) : "";
-      const renamed = candidate.includes(" -> ") ? candidate.split(" -> ").at(-1) ?? candidate : candidate;
-      return normalizePath(renamed.trim());
-    })
-    .filter(Boolean);
-
-  const statusChanges = statusFiles.map((file) => ({ path: file, status: "?" as GitChangeStatus }));
-  const filteredStatusChanges = filterIgnoredGitChanges(statusChanges);
-  if (filteredStatusChanges.length === 0) {
-    const lastCommit = await getLastCommitInfo(rootDir);
-    const lastCommitRaw = await runGit(rootDir, ["show", "--name-status", "--format=", lastCommit.hash]);
-    const lastCommitChanges = parseNameStatusOutput(lastCommitRaw);
-    const filteredLastCommitChanges = filterIgnoredGitChanges(lastCommitChanges);
-
-    if (filteredLastCommitChanges.length === 0) {
-      return {
-        source: "status",
-        files: [],
-        changes: []
-      };
-    }
+  if (!history.hasCommits) {
+    const initialChanges = await getInitialWorkspaceChanges(rootDir, statusRaw);
+    const filteredInitialChanges = filterIgnoredGitChanges(initialChanges);
 
     return {
+      source: "initial-workspace",
+      files: filterIgnoredChanges(unique(filteredInitialChanges.map((change) => normalizePath(change.path)))),
+      changes: filteredInitialChanges,
+      diffBase: history.diffBase
+    };
+  }
+
+  const trackedWorkspaceRaw = await runGit(rootDir, ["diff", "--name-status", "HEAD"]);
+  const trackedWorkspaceChanges = parseNameStatusOutput(trackedWorkspaceRaw);
+  const untrackedChanges = parseUntrackedStatusChanges(statusRaw);
+  const workspaceChanges = mergeChanges(trackedWorkspaceChanges, untrackedChanges);
+  const filteredWorkspaceChanges = filterIgnoredGitChanges(workspaceChanges);
+
+  if (filteredWorkspaceChanges.length > 0) {
+    return {
+      source: "workspace",
+      files: filterIgnoredChanges(unique(filteredWorkspaceChanges.map((change) => normalizePath(change.path)))),
+      changes: filteredWorkspaceChanges,
+      diffBase: history.diffBase
+    };
+  }
+
+  const lastCommitRaw = await runGit(rootDir, ["show", "--name-status", "--format=", history.basedOn.hash]);
+  const lastCommitChanges = parseNameStatusOutput(lastCommitRaw);
+  const filteredLastCommitChanges = filterIgnoredGitChanges(lastCommitChanges);
+
+  if (filteredLastCommitChanges.length === 0) {
+    return {
       source: "last-commit",
-      files: filterIgnoredChanges(unique(filteredLastCommitChanges.map((change) => normalizePath(change.path)))),
-      changes: filteredLastCommitChanges
+      files: [],
+      changes: [],
+      diffBase: history.basedOn.hash
     };
   }
 
   return {
-    source: "status",
-    files: filterIgnoredChanges(unique(filteredStatusChanges.map((change) => normalizePath(change.path)))),
-    changes: filteredStatusChanges
+    source: "last-commit",
+    files: filterIgnoredChanges(unique(filteredLastCommitChanges.map((change) => normalizePath(change.path)))),
+    changes: filteredLastCommitChanges,
+    diffBase: history.basedOn.hash
   };
 }
 
@@ -687,22 +1048,19 @@ export async function generateCommitMessageSuggestion(
   rootDir: string,
   options: CommitMessageOptions = {}
 ): Promise<CommitMessageSuggestion> {
-  const lastCommitInfo = await getLastCommitInfo(rootDir);
-  const lastCommitSubject = lastCommitInfo.subject;
-  const prefix = lastCommitInfo.prefix;
-
-  const changeSet = await getChangedFiles(rootDir);
+  const history = await getGitHistoryInfo(rootDir);
+  const changeSet = await getChangedFiles(rootDir, history);
   if (changeSet.files.length === 0) {
     throw new Error(
       "No commit-worthy changes detected (only generated files like .awesome-context/ or dist/ changed)."
     );
   }
 
-  const patchText = await getChangePatchText(rootDir, changeSet.source, changeSet.files, lastCommitInfo.hash);
+  const patchText = await getChangePatchText(rootDir, changeSet.source, changeSet.files, changeSet.diffBase);
   const concreteSummary = inferConcreteChangeSummary(changeSet.files, patchText);
-  const action = concreteSummary?.action ?? inferAction(changeSet.files);
-  const diffMetrics = await getDiffMetrics(rootDir, changeSet.source, changeSet.changes);
+  const diffMetrics = await getDiffMetrics(rootDir, changeSet.source, changeSet.changes, changeSet.diffBase);
   const commitType = inferCleanCommitType(changeSet.changes);
+  const action = concreteSummary?.action ?? (changeSet.source === "initial-workspace" ? inferInitialAction(changeSet.files) : inferAction(changeSet.files, patchText, commitType));
   const scope = inferScope(changeSet.changes, commitType);
   const breakingRequested = Boolean(options.breaking);
   const breakingSupported = canUseBreakingMarker(commitType);
@@ -713,7 +1071,9 @@ export async function generateCommitMessageSuggestion(
   const description = concreteSummary?.highlights.length
     ? [...concreteSummary.highlights]
     : [
-        inferIntent(commitType, action),
+        changeSet.source === "initial-workspace"
+          ? `This work captures the first commit from the current workspace to ${action}.`
+          : inferIntent(commitType, action),
         `Delivery summary: ${deliverySummary}.`
       ];
 
@@ -737,9 +1097,9 @@ export async function generateCommitMessageSuggestion(
     breakingSupported,
     breaking,
     basedOn: {
-      hash: lastCommitInfo.hash,
-      subject: lastCommitSubject,
-      prefix
+      hash: history.basedOn.hash,
+      subject: history.basedOn.subject,
+      prefix: history.basedOn.prefix
     }
   };
 }

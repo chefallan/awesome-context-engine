@@ -126,6 +126,40 @@ async function getPublishedVersion(rootDir, packageName, npmBin) {
   }
 }
 
+async function waitForPublished(rootDir, packageName, version, npmBin) {
+  const versionTag = `${packageName}@${version}`;
+  const maxWaitMs = 90_000;
+  const pollIntervals = [3_000, 5_000, 5_000, 5_000, 7_000, 10_000, 10_000, 10_000, 15_000, 20_000];
+  let elapsed = 0;
+
+  process.stdout.write(`\nWaiting for ${versionTag} to appear on the registry`);
+
+  for (const delay of pollIntervals) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    elapsed += delay;
+    process.stdout.write(".");
+
+    try {
+      const found = await run(npmBin, ["view", `${packageName}@${version}`, "version"], rootDir);
+      if (found.trim() === version) {
+        process.stdout.write(` available (${elapsed / 1000}s)\n`);
+        return;
+      }
+    } catch {
+      // not yet visible — keep polling
+    }
+
+    if (elapsed >= maxWaitMs) {
+      break;
+    }
+  }
+
+  throw new Error(
+    `Timed out waiting for ${versionTag} to appear on the npm registry after ${elapsed / 1000}s. ` +
+    `Try running the install steps manually once the version propagates.`
+  );
+}
+
 function parseCommitSuggestion(stdout) {
   const stripAnsi = (value) => value.replace(/\u001b\[[0-9;]*m/g, "");
   const lines = stdout.split(/\r?\n/).map((line) => stripAnsi(line));
@@ -172,7 +206,31 @@ async function main() {
   }
 
   const npmBin = npmCommand();
-  await run(npmBin, ["whoami"], rootDir);
+
+  let npmUser = "";
+  try {
+    npmUser = await run(npmBin, ["whoami"], rootDir);
+  } catch {
+    // not logged in — prompt for login
+  }
+
+  if (!npmUser) {
+    console.log("Not logged in to npm. Running npm login...");
+    await runInteractive(npmBin, ["login"], rootDir);
+
+    try {
+      npmUser = await run(npmBin, ["whoami"], rootDir);
+    } catch {
+      // still not logged in after login attempt
+    }
+
+    if (!npmUser) {
+      throw new Error("npm login did not succeed. Please run `npm login` manually and retry.");
+    }
+  }
+
+  console.log(`Logged in to npm as ${npmUser}.`);
+
   const publishedVersion = await getPublishedVersion(rootDir, pkgBefore.name, npmBin);
   const localAhead = publishedVersion && compareSemver(pkgBefore.version, publishedVersion) > 0;
 
@@ -186,7 +244,17 @@ async function main() {
   await publishWithBrowserAuth(npmBin, rootDir);
 
   const pkgAfter = await readPackageInfo(rootDir);
-  await run(npmBin, ["install", "-g", `${pkgAfter.name}@latest`], rootDir);
+  const versionTag = `${pkgAfter.name}@${pkgAfter.version}`;
+
+  await waitForPublished(rootDir, pkgAfter.name, pkgAfter.version, npmBin);
+
+  console.log(`\nUpdating global install to ${versionTag}...`);
+  await run(npmBin, ["install", "-g", `${pkgAfter.name}@${pkgAfter.version}`], rootDir);
+  console.log("Global install updated.");
+
+  console.log(`\nUpdating project dependency to ${versionTag}...`);
+  await run(npmBin, ["install", `${pkgAfter.name}@${pkgAfter.version}`], rootDir);
+  console.log("Project dependency updated.");
 
   const branch = await run("git", ["rev-parse", "--abbrev-ref", "HEAD"], rootDir);
   if (!branch || branch === "HEAD") {
