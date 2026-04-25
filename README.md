@@ -19,6 +19,7 @@ awesome-context-engine keeps repository context current for AI coding tools by c
 - [Platform Compatibility](#platform-compatibility)
 - [Quick Commands](#quick-commands)
 - [Special Commands](#special-commands)
+- [Example: Repository Baseline Scan](#example-repository-baseline-scan)
 - [What It Solves](#what-it-solves)
 - [Features](#features)
 - [Commands](#commands)
@@ -70,6 +71,7 @@ Compatibility notes:
 
 ```bash
 npx awesome-context-engine init
+npx awesome-context-engine scan
 npx awesome-context-engine index
 npx awesome-context-engine sync
 npx awesome-context-engine auto
@@ -109,6 +111,7 @@ awesome-context-engine solves this by:
 
 - Persistent repository memory under `.awesome-context`
 - Automatic context updates with `auto` mode and optional VS Code startup task
+- Repository baseline scanning with `scan` for existing codebases
 - Token optimization via deduped, prioritized, minimal context generation
 - Safe integration files for Copilot, Claude, Cline, Continue, Cursor, and Codex
 - Health checks through `doctor` with text or JSON output
@@ -119,6 +122,7 @@ awesome-context-engine solves this by:
 | Command | Purpose |
 | --- | --- |
 | `awesome-context-engine init` | Initialize context files and AI integration files |
+| `awesome-context-engine scan` | Scan existing repository and baseline memory/workflows/decisions/preferences |
 | `awesome-context-engine index` | Update `.awesome-context/project-map.md` |
 | `awesome-context-engine sync` | Regenerate `.awesome-context/ai-context.md` |
 | `awesome-context-engine auto` | Start watcher mode (index -> sync on change) |
@@ -137,15 +141,17 @@ awesome-context-engine solves this by:
 | `--compact` | Emit compact single-line JSON (with `--json`) |
 | `--strict` | Fail sync when secret-like content is detected before redaction |
 | `--breaking` | Add Clean Commit `!` marker for `commit-msg` when type supports breaking changes |
+| `--dry-run` | Preview `scan` baseline results without writing files |
 
 ## How It Works
 
 ![How It Works](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/how-it-works.png)
 
 1. Initialize repository memory and integration files with `init`.
-2. Index the codebase to generate project structure and metadata.
-3. Sync compact AI context from memory, map, workflows, and graph signals.
-4. Optionally run `auto` to continuously refresh context after repository changes.
+2. Scan existing repository context with `scan` (this is also run automatically by `init`).
+3. Index and baseline memory/workflows/decisions/preferences from repository signals.
+4. Sync compact AI context from memory, map, workflows, and graph signals.
+5. Optionally run `auto` to continuously refresh context after repository changes.
 
 ## `.awesome-context` Structure
 
@@ -177,6 +183,9 @@ npx awesome-context-engine auto
 
 During `init`, the project can also install a VS Code task (`runOn: folderOpen`) so context refresh starts automatically when the workspace opens.
 
+`init` now also runs an automatic baseline scan, so existing repositories immediately get starter context in
+`.awesome-context/memory.md`, `.awesome-context/workflows.md`, `.awesome-context/decisions.md`, and `.awesome-context/preferences.md`.
+
 When `auto` is running, it performs an initial `index + sync`, then re-runs on repository changes and editable context files (`memory.md`, `preferences.md`, `decisions.md`, `workflows.md`).
 
 After this task is installed, you do not need to manually run `auto` every time you reopen VS Code.
@@ -187,6 +196,16 @@ One-time setup: allow automatic tasks in this workspace via **Tasks: Manage Auto
 ```bash
 npx awesome-context-engine doctor --json --compact
 ```
+
+## Example: Repository Baseline Scan
+
+```bash
+npx awesome-context-engine scan
+npx awesome-context-engine scan --dry-run --verbose
+```
+
+Use this for existing repositories to automatically capture what the repo is about and generate baseline context files before daily `auto` updates.
+Use `--dry-run` to preview what would be updated without changing any files.
 
 ## Example: Clean Commit Message Generation
 

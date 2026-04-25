@@ -320,7 +320,9 @@
 
       <p class="summary">
         Keep AI coding context fresh without manual prompt wrangling.
-        awesome-context-engine initializes repository memory, indexes your project, syncs compact context files, and generates Clean Commit messages for tools like Copilot, Claude, Cline, Continue, Cursor, and Codex.
+        awesome-context-engine initializes repository memory, scans existing repositories to baseline context,
+        indexes your project, syncs compact context files, and generates Clean Commit messages for tools like
+        Copilot, Claude, Cline, Continue, Cursor, and Codex.
       </p>
 
       <div class="feature-grid">
@@ -368,6 +370,7 @@
       <p>Run the CLI from your repository root and follow the guided setup.</p>
       <ol class="command-list">
         <li><span class="mono">npx awesome-context-engine init</span> to initialize context and AI integration files.</li>
+        <li><span class="mono">npx awesome-context-engine scan</span> to baseline repository context for existing codebases.</li>
         <li><span class="mono">npx awesome-context-engine index</span> to refresh project structure mapping.</li>
         <li><span class="mono">npx awesome-context-engine sync</span> to regenerate compact AI context.</li>
         <li><span class="mono">npx awesome-context-engine auto</span> to watch and update continuously.</li>
@@ -382,6 +385,7 @@
         <li><span class="mono">npx awesome-context-engine commit-msg --breaking</span> to mark incompatible changes when valid.</li>
         <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24</span> to produce a date-based leadership summary.</li>
         <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24 --json --compact</span> for dashboards and automation pipelines.</li>
+        <li><span class="mono">npx awesome-context-engine scan --dry-run --verbose</span> to preview baseline context updates with no file writes.</li>
       </ul>
     </section>
 
@@ -400,6 +404,8 @@
     <section class="section" aria-labelledby="auto-start-title">
       <h2 id="auto-start-title">Auto-start on Reopen</h2>
       <p>
+        During setup, <span class="mono">init</span> performs a baseline repository scan automatically, so context files are ready immediately.
+        
         After setup installs the VS Code <span class="mono">folderOpen</span> task, you do not need to manually run
         <span class="mono">auto</span> each time. Reopening the workspace starts the index + sync cycle automatically.
         One-time action: set this workspace to <strong>Allow Automatic Tasks</strong> from
@@ -410,6 +416,8 @@
     <section class="section" aria-labelledby="updates-title">
       <h2 id="updates-title">Latest Updates</h2>
       <ul class="command-list">
+        <li>New: <span class="mono">scan</span> command baselines context for existing repositories before ongoing auto updates.</li>
+        <li>New: <span class="mono">scan --dry-run</span> previews baseline context generation without changing repository files.</li>
         <li>Commit message generation follows the Clean Commit standard with optional <span class="mono">--breaking</span>.</li>
         <li>EOD report now provides executive summary, delivery stats, and detailed plain-English commit outcomes.</li>
         <li>Auto mode performs <span class="mono">index + sync</span> on startup and re-runs on repository and editable context updates.</li>

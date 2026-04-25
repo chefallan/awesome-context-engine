@@ -1,9 +1,9 @@
 # Project Map
 
-Generated at: 2026-04-25T02:26:30.891Z
+Generated at: 2026-04-25T04:58:02.390Z
 
 ## Repository Snapshot
-- Total files: 51
+- Total files: 52
 - Total directories: 15
 - Truncated scan: no
 
@@ -58,6 +58,7 @@ Generated at: 2026-04-25T02:26:30.891Z
 │   ├── indexer.ts
 │   ├── init.ts
 │   ├── redact.ts
+│   ├── scan.ts
 │   ├── strict-mode.ts
 │   ├── sync.ts
 │   ├── templates.ts
@@ -80,7 +81,7 @@ Generated at: 2026-04-25T02:26:30.891Z
 ```
 
 ## Detected Languages
-- TypeScript: 16
+- TypeScript: 17
 - Markdown: 14
 - JSON: 5
 - HTML: 1

@@ -8,6 +8,7 @@ import { runDoctor } from "./doctor.js";
 import { generateEodReport } from "./eod-report.js";
 import { initProject, type InitResult } from "./init.js";
 import { indexProject } from "./indexer.js";
+import { scanRepositoryContext } from "./scan.js";
 import { syncContext } from "./sync.js";
 import { getExitCodeForError } from "./strict-mode.js";
 import { getContextPaths } from "./templates.js";
@@ -15,7 +16,7 @@ import { confirmPrompt, error, heading, info, secondary, success, warning } from
 import { ensureVscodeAutoTask } from "./vscodeTask.js";
 import { startAutoMode } from "./watcher.js";
 
-type Command = "init" | "index" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "eod-report" | "help";
+type Command = "init" | "index" | "scan" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "eod-report" | "help";
 
 type CliOptions = {
   yes: boolean;
@@ -25,6 +26,7 @@ type CliOptions = {
   compact: boolean;
   strict: boolean;
   breaking: boolean;
+  dryRun: boolean;
 };
 
 type ParsedCli = {
@@ -50,7 +52,8 @@ function parseCli(argv: string[]): ParsedCli {
     json: false,
     compact: false,
     strict: false,
-    breaking: false
+    breaking: false,
+    dryRun: false
   };
 
   let command: Command | null = null;
@@ -91,6 +94,10 @@ function parseCli(argv: string[]): ParsedCli {
       options.breaking = true;
       continue;
     }
+    if (arg === "--dry-run") {
+      options.dryRun = true;
+      continue;
+    }
     if (arg === "--help" || arg === "-h") {
       command = "help";
       continue;
@@ -102,7 +109,7 @@ function parseCli(argv: string[]): ParsedCli {
     }
 
     if (!command) {
-      if (["init", "index", "sync", "auto", "doctor", "benchmark", "commit-msg", "eod-report", "help"].includes(arg)) {
+      if (["init", "index", "scan", "sync", "auto", "doctor", "benchmark", "commit-msg", "eod-report", "help"].includes(arg)) {
         command = arg as Command;
       } else {
         command = "help";
@@ -125,6 +132,7 @@ Usage:
   awesome-context-engine            First-run setup or quick sync
   awesome-context-engine init       Initialize core context files
   awesome-context-engine index      Update project-map.md only
+  awesome-context-engine scan       Scan repository and baseline context files
   awesome-context-engine sync       Regenerate ai-context.md only
   awesome-context-engine auto       Watch mode: index + sync on changes
   awesome-context-engine doctor     Check setup health
@@ -140,6 +148,7 @@ Flags:
   --compact           Output compact JSON (use with --json)
   --strict            Fail sync when secret-like content is detected before redaction
   --breaking          Add Clean Commit breaking marker (!) for commit-msg when valid
+  --dry-run           Preview scan output without writing files
 `);
 }
 
@@ -192,6 +201,22 @@ async function runInitCommand(rootDir: string, options: CliOptions): Promise<voi
 
   success("AI integration files created");
   success("Context files initialized");
+
+  try {
+    const scanResult = await scanRepositoryContext(rootDir, { strict: options.strict });
+    success("Repository scanned and context baselined");
+    if (options.verbose) {
+      info(`- scan files indexed: ${scanResult.index.data.totalFiles}`);
+      if (scanResult.sync) {
+        info(`- ai-context: ${path.relative(rootDir, scanResult.sync.contextPath)} (${scanResult.sync.bytes} bytes)`);
+      }
+    }
+  } catch (scanError) {
+    printStepError("scan", scanError);
+    process.exit(getExitCodeForError(scanError));
+    return;
+  }
+
   if (shouldInstallTask) {
     success("VS Code auto task installed");
   } else {
@@ -229,18 +254,17 @@ async function runFirstTimeExperience(rootDir: string, options: CliOptions): Pro
   }
 
   try {
-    await indexProject(rootDir);
-    success("Project indexed");
-  } catch (stepError) {
-    printStepError("index", stepError);
-    return;
-  }
-
-  try {
-    await syncContext(rootDir, { strict: options.strict });
+    const scanResult = await scanRepositoryContext(rootDir, { strict: options.strict });
+    success("Repository scanned");
     success("AI context synced");
+    if (options.verbose) {
+      info(`- scan files indexed: ${scanResult.index.data.totalFiles}`);
+      if (scanResult.sync) {
+        info(`- ai-context: ${path.relative(rootDir, scanResult.sync.contextPath)} (${scanResult.sync.bytes} bytes)`);
+      }
+    }
   } catch (stepError) {
-    printStepError("sync", stepError);
+    printStepError("scan", stepError);
     process.exit(getExitCodeForError(stepError));
     return;
   }
@@ -472,6 +496,36 @@ async function main(): Promise<void> {
         if (options.verbose) {
           info(`[index] files: ${result.data.totalFiles}, dirs: ${result.data.totalDirectories}`);
           info(`[index] output: ${path.relative(rootDir, result.indexMarkdownPath)}`);
+        }
+        break;
+      }
+      case "scan": {
+        const result = await scanRepositoryContext(rootDir, {
+          strict: options.strict,
+          dryRun: options.dryRun
+        });
+        if (result.dryRun) {
+          success("Scan preview complete (no files written)");
+        } else {
+          success("Repository scanned and context baselined");
+        }
+        if (options.verbose) {
+          info(`[scan] files: ${result.index.data.totalFiles}, dirs: ${result.index.data.totalDirectories}`);
+          if (result.dryRun) {
+            info("[scan] would update:");
+            for (const filePath of result.updatedFiles) {
+              info(`  - ${path.relative(rootDir, filePath)}`);
+            }
+            info(`[scan] preview memory points: ${result.preview.memory.length}`);
+            info(`[scan] preview workflow points: ${result.preview.workflows.length}`);
+            info(`[scan] preview preference points: ${result.preview.preferences.length}`);
+            info(`[scan] preview decision points: ${result.preview.decisions.length}`);
+          } else {
+            info(`[scan] project map: ${path.relative(rootDir, result.index.indexMarkdownPath)}`);
+            if (result.sync) {
+              info(`[scan] ai-context: ${path.relative(rootDir, result.sync.contextPath)} (${result.sync.bytes} bytes)`);
+            }
+          }
         }
         break;
       }

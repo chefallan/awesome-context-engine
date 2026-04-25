@@ -27,6 +27,7 @@ export type IndexResult = {
 export type IndexOptions = {
   maxFiles?: number;
   writeJson?: boolean;
+  writeMarkdown?: boolean;
 };
 
 type WalkState = {
@@ -504,7 +505,9 @@ export async function indexProject(rootDir: string, options: IndexOptions = {}):
     buildCommands,
     entrypoints
   );
-  await fs.writeFile(paths.projectMapPath, markdown, "utf8");
+  if (options.writeMarkdown !== false) {
+    await fs.writeFile(paths.projectMapPath, markdown, "utf8");
+  }
   if (options.writeJson !== false) {
     await fs.writeFile(paths.indexJsonPath, JSON.stringify(data, null, 2), "utf8");
   }

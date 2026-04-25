@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-25T02:26:30.891Z",
+  "generatedAt": "2026-04-25T04:58:02.390Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
-  "totalFiles": 51,
+  "totalFiles": 52,
   "totalDirectories": 15,
   "byExtension": {
     "[no-ext]": 8,
@@ -10,7 +10,7 @@
     ".json": 5,
     ".png": 6,
     ".html": 1,
-    ".ts": 16
+    ".ts": 17
   },
   "files": [
     {
@@ -160,8 +160,8 @@
     },
     {
       "path": "docs/index.html",
-      "bytes": 15811,
-      "mtimeMs": 1777083875962.7034
+      "bytes": 16588,
+      "mtimeMs": 1777092751086.896
     },
     {
       "path": "LICENSE",
@@ -171,17 +171,17 @@
     {
       "path": "package-lock.json",
       "bytes": 22828,
-      "mtimeMs": 1777083967537.5586
+      "mtimeMs": 1777093073350.0337
     },
     {
       "path": "package.json",
       "bytes": 1034,
-      "mtimeMs": 1777083967536.5596
+      "mtimeMs": 1777093073333.085
     },
     {
       "path": "README.md",
-      "bytes": 11501,
-      "mtimeMs": 1777083875962.7034
+      "bytes": 12594,
+      "mtimeMs": 1777092751000.7654
     },
     {
       "path": "src/benchmark.ts",
@@ -190,8 +190,8 @@
     },
     {
       "path": "src/cli.ts",
-      "bytes": 14807,
-      "mtimeMs": 1777083875962.7034
+      "bytes": 17285,
+      "mtimeMs": 1777092946530.902
     },
     {
       "path": "src/commit-message.ts",
@@ -215,8 +215,8 @@
     },
     {
       "path": "src/indexer.ts",
-      "bytes": 14712,
-      "mtimeMs": 1777073104374.1736
+      "bytes": 14789,
+      "mtimeMs": 1777092724137.7517
     },
     {
       "path": "src/init.ts",
@@ -227,6 +227,11 @@
       "path": "src/redact.ts",
       "bytes": 2202,
       "mtimeMs": 1777076547265.1284
+    },
+    {
+      "path": "src/scan.ts",
+      "bytes": 13671,
+      "mtimeMs": 1777092942228.6423
     },
     {
       "path": "src/strict-mode.ts",
