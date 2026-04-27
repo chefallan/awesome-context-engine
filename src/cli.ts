@@ -480,7 +480,15 @@ async function runCommitMessageCommand(rootDir: string, options: CliOptions): Pr
 
 async function runEodReportCommand(rootDir: string, options: CliOptions, commandArgs: string[]): Promise<void> {
   const dateArg = commandArgs[0];
-  const result = await generateEodReport(rootDir, dateArg);
+  const githubToken = await resolveGitHubToken();
+
+  if (githubToken) {
+    secondary("Generating EOD report with GitHub Copilot...");
+  } else if (process.env.ANTHROPIC_API_KEY) {
+    secondary("Generating EOD report with Claude...");
+  }
+
+  const result = await generateEodReport(rootDir, dateArg, { githubToken });
 
   if (options.json) {
     const indent = options.compact ? undefined : 2;

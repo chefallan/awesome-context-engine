@@ -81,6 +81,37 @@ export async function generateWithGitHubCopilot(
   return tryCopilotApi(copilotToken, prompt);
 }
 
+export async function callGitHubModels(githubToken: string, prompt: string): Promise<string | null> {
+  try {
+    const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${githubToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: 600,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "You output only valid JSON. No markdown, no explanation, no prose. Just the JSON object."
+          },
+          { role: "user", content: prompt }
+        ]
+      })
+    });
+
+    if (!response.ok) return null;
+
+    const json = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+    return json.choices?.[0]?.message?.content?.trim() ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function tryGitHubModels(githubToken: string, prompt: string): Promise<CopilotResult | null> {
   try {
     const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {

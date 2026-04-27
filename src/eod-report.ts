@@ -1,5 +1,7 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { callGitHubModels } from "./github-copilot.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -345,7 +347,94 @@ function buildExecutiveSummary(
   };
 }
 
-export async function generateEodReport(rootDir: string, dateInput?: string): Promise<EodReportResult> {
+export type EodReportOptions = {
+  githubToken?: string;
+};
+
+type AIEodSummary = {
+  executiveSummary: string[];
+  provider: "anthropic" | "github-copilot" | "heuristic";
+};
+
+function buildEodPrompt(
+  date: string,
+  commits: Array<{ subject: string; cleanCommit?: ParsedCleanCommit; diff: CommitDiffSummary }>
+): string {
+  const commitLines = commits
+    .map((c, i) => {
+      const label = c.cleanCommit
+        ? `${c.cleanCommit.type}${c.cleanCommit.scope ? `(${c.cleanCommit.scope})` : ""}: ${c.cleanCommit.description}`
+        : c.subject;
+      return `${i + 1}. ${label} — ${c.diff.filesChanged} file(s), +${c.diff.additions}/-${c.diff.deletions} lines`;
+    })
+    .join("\n");
+
+  return `Git commits for ${date}:
+
+${commitLines}
+
+Write a concise EOD/standup executive summary for these commits. Return JSON using EXACTLY these keys:
+{
+  "executiveSummary": ["<bullet 1>", "<bullet 2>", "<bullet 3>"]
+}
+
+Rules: 3-5 bullets. Each bullet is a complete sentence. Synthesize themes, don't just list commits. Mention actual work done (features, fixes, refactors). No filler phrases like "the team worked on".`;
+}
+
+async function generateEodSummaryWithAI(
+  date: string,
+  commits: Array<{ subject: string; cleanCommit?: ParsedCleanCommit; diff: CommitDiffSummary }>,
+  githubToken?: string
+): Promise<AIEodSummary> {
+  if (commits.length === 0) {
+    return { executiveSummary: [], provider: "heuristic" };
+  }
+
+  const prompt = buildEodPrompt(date, commits);
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (apiKey) {
+    try {
+      const client = new Anthropic({ apiKey });
+      const response = await client.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 500,
+        messages: [{ role: "user", content: prompt }]
+      });
+      const raw = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+      const parsed = parseEodAIResponse(raw);
+      if (parsed) return { executiveSummary: parsed, provider: "anthropic" };
+    } catch {
+      // fall through
+    }
+  }
+
+  if (githubToken) {
+    const raw = await callGitHubModels(githubToken, prompt);
+    if (raw) {
+      const parsed = parseEodAIResponse(raw);
+      if (parsed) return { executiveSummary: parsed, provider: "github-copilot" };
+    }
+  }
+
+  return { executiveSummary: [], provider: "heuristic" };
+}
+
+function parseEodAIResponse(raw: string): string[] | null {
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  try {
+    const parsed = JSON.parse(jsonMatch[0]) as { executiveSummary?: unknown };
+    if (Array.isArray(parsed.executiveSummary) && parsed.executiveSummary.every((s) => typeof s === "string")) {
+      return parsed.executiveSummary as string[];
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
+export async function generateEodReport(rootDir: string, dateInput?: string, options: EodReportOptions = {}): Promise<EodReportResult> {
   const date = dateInput || new Date().toISOString().slice(0, 10);
   if (!isValidDateInput(date)) {
     throw new Error("Invalid date. Use YYYY-MM-DD (example: 2026-04-24).");
@@ -395,19 +484,26 @@ export async function generateEodReport(rootDir: string, dateInput?: string): Pr
   }
 
   const coveragePercent = commits.length > 0 ? Number(((cleanCommitCount / commits.length) * 100).toFixed(2)) : 0;
-  const executive = buildExecutiveSummary(date, detailedCommits, coveragePercent);
+  const [executive, aiSummary] = await Promise.all([
+    Promise.resolve(buildExecutiveSummary(date, detailedCommits, coveragePercent)),
+    generateEodSummaryWithAI(date, detailedCommits, options.githubToken)
+  ]);
+
+  const executiveSummary = aiSummary.executiveSummary.length > 0
+    ? aiSummary.executiveSummary
+    : executive.lines;
 
   return {
     date,
     totalCommits: commits.length,
     cleanCommitCoveragePercent: coveragePercent,
-    executiveSummary: executive.lines,
+    executiveSummary,
     deliveryStats: executive.stats,
     commitTypeBreakdown: breakdown,
     summaryBullets: detailedCommits.map((commit) =>
       formatDetailedBullet(commit, commit.summaryDescription, commit.cleanCommit, commit.diff)
     ),
     commits: detailedCommits,
-    markdown: toMarkdown(date, detailedCommits, breakdown, coveragePercent, executive.lines, executive.stats)
+    markdown: toMarkdown(date, detailedCommits, breakdown, coveragePercent, executiveSummary, executive.stats)
   };
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T02:31:50.535Z",
+  "generatedAt": "2026-04-27T02:47:56.589Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
   "totalFiles": 73,
   "totalDirectories": 38,
@@ -177,12 +177,12 @@
     {
       "path": "package-lock.json",
       "bytes": 25060,
-      "mtimeMs": 1777257107533.963
+      "mtimeMs": 1777258073563.813
     },
     {
       "path": "package.json",
       "bytes": 1319,
-      "mtimeMs": 1777257107504.7603
+      "mtimeMs": 1777258073537.5803
     },
     {
       "path": "README.md",
@@ -201,8 +201,8 @@
     },
     {
       "path": "src/cli.ts",
-      "bytes": 23855,
-      "mtimeMs": 1777253542113.0037
+      "bytes": 24121,
+      "mtimeMs": 1777257888482.863
     },
     {
       "path": "src/commit-message.ts",
@@ -216,13 +216,13 @@
     },
     {
       "path": "src/eod-report.ts",
-      "bytes": 12374,
-      "mtimeMs": 1777083876060.9797
+      "bytes": 15632,
+      "mtimeMs": 1777257867848.1892
     },
     {
       "path": "src/github-copilot.ts",
-      "bytes": 5940,
-      "mtimeMs": 1777256814595.711
+      "bytes": 6910,
+      "mtimeMs": 1777257856804.3145
     },
     {
       "path": "src/graph.ts",
