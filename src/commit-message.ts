@@ -74,6 +74,8 @@ export type CommitMessageSuggestion = {
   breakingSupported: boolean;
   breaking: boolean;
   basedOn: LastCommitInfo;
+  aiProvider: "anthropic" | "github-copilot" | "heuristic";
+  copilotFailureReason?: "no-subscription" | "api-error" | "parse-error";
 };
 
 function normalizePath(input: string): string {
@@ -1026,12 +1028,34 @@ type AICommitSummary = {
   highlights: string[];
 };
 
-async function generateWithAI(files: string[], diffText: string, githubToken?: string): Promise<AICommitSummary | null> {
+type AIResult = {
+  summary: AICommitSummary;
+  provider: "anthropic" | "github-copilot";
+  copilotFailureReason?: never;
+} | {
+  summary: null;
+  provider: "heuristic";
+  copilotFailureReason?: "no-subscription" | "api-error" | "parse-error";
+};
+
+async function generateWithAI(files: string[], diffText: string, githubToken?: string): Promise<AIResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return githubToken ? generateWithGitHubCopilot(files, diffText, githubToken) : null;
+
+  if (apiKey) {
+    const summary = await tryAnthropic(apiKey, files, diffText);
+    if (summary) return { summary, provider: "anthropic" };
   }
 
+  if (githubToken) {
+    const result = await generateWithGitHubCopilot(files, diffText, githubToken);
+    if (result.ok) return { summary: { action: result.action, highlights: result.highlights }, provider: "github-copilot" };
+    return { summary: null, provider: "heuristic", copilotFailureReason: result.reason };
+  }
+
+  return { summary: null, provider: "heuristic" };
+}
+
+async function tryAnthropic(apiKey: string, files: string[], diffText: string): Promise<AICommitSummary | null> {
   const truncatedDiff = diffText.length > 8000 ? `${diffText.slice(0, 8000)}\n...[diff truncated]` : diffText;
   const fileList = files.slice(0, 40).join("\n");
 
@@ -1097,11 +1121,11 @@ export async function generateCommitMessageSuggestion(
   }
 
   const patchText = await getChangePatchText(rootDir, changeSet.source, changeSet.files, changeSet.diffBase);
-  const [aiSummary, diffMetrics] = await Promise.all([
+  const [aiResult, diffMetrics] = await Promise.all([
     generateWithAI(changeSet.files, patchText, options.githubToken),
     getDiffMetrics(rootDir, changeSet.source, changeSet.changes, changeSet.diffBase)
   ]);
-  const concreteSummary = aiSummary ?? inferConcreteChangeSummary(changeSet.files, patchText);
+  const concreteSummary = aiResult.summary ?? inferConcreteChangeSummary(changeSet.files, patchText);
   const commitType = inferCleanCommitType(changeSet.changes);
   const action = concreteSummary?.action ?? (changeSet.source === "initial-workspace" ? inferInitialAction(changeSet.files) : inferAction(changeSet.files, patchText, commitType));
   const scope = inferScope(changeSet.changes, commitType);
@@ -1134,6 +1158,8 @@ export async function generateCommitMessageSuggestion(
     breakingRequested,
     breakingSupported,
     breaking,
+    aiProvider: aiResult.provider,
+    copilotFailureReason: aiResult.copilotFailureReason,
     basedOn: {
       hash: history.basedOn.hash,
       subject: history.basedOn.subject,

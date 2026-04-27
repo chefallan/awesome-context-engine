@@ -428,7 +428,23 @@ async function resolveGitHubToken(): Promise<string | undefined> {
 
 async function runCommitMessageCommand(rootDir: string, options: CliOptions): Promise<void> {
   const githubToken = await resolveGitHubToken();
+
+  if (githubToken) {
+    secondary("Generating commit message with GitHub Copilot...");
+  } else if (process.env.ANTHROPIC_API_KEY) {
+    secondary("Generating commit message with Claude...");
+  }
+
   const result = await generateCommitMessageSuggestion(rootDir, { breaking: options.breaking, githubToken });
+
+  if (result.aiProvider === "heuristic" && githubToken) {
+    const reasonMsg: Record<string, string> = {
+      "no-subscription": "GitHub Copilot subscription not found — using heuristics instead.",
+      "api-error": "GitHub Copilot API error — using heuristics instead.",
+      "parse-error": "GitHub Copilot returned an unexpected response — using heuristics instead."
+    };
+    warning(reasonMsg[result.copilotFailureReason ?? "api-error"] ?? "Copilot unavailable — using heuristics instead.");
+  }
 
   if (options.json) {
     const indent = options.compact ? undefined : 2;

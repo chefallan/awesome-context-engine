@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -7,6 +7,25 @@ export type CopilotReadiness =
   | { state: "ready"; token: string }
   | { state: "needs-login" }
   | { state: "unavailable" };
+
+export type CopilotResult =
+  | { ok: true; action: string; highlights: string[] }
+  | { ok: false; reason: "no-subscription" | "api-error" | "parse-error" };
+
+const COMMIT_PROMPT = (fileList: string, diff: string) =>
+  `Changed files:
+${fileList}
+
+Diff:
+${diff}
+
+Write a git commit message. Respond using ONLY these exact JSON keys:
+{
+  "action": "<4-8 word verb phrase starting with a verb, e.g. 'add copilot AI commit generation'>",
+  "highlights": ["<specific change 1>", "<specific change 2>"]
+}
+
+Rules: action starts with a verb. highlights name actual files or features. 2-4 highlights. No other keys.`;
 
 export async function checkGhCopilotReadiness(): Promise<CopilotReadiness> {
   const ghAvailable = await isGhCliAvailable();
@@ -23,52 +42,78 @@ export async function checkGhCopilotReadiness(): Promise<CopilotReadiness> {
 }
 
 export async function loginWithGh(): Promise<string | null> {
-  try {
-    await execFileAsync("gh", ["auth", "login", "--web", "--git-protocol", "https"], {
-      stdio: "inherit"
-    } as Parameters<typeof execFileAsync>[2]);
-    return getGhAuthToken();
-  } catch {
-    return null;
-  }
+  return new Promise((resolve) => {
+    const child = spawn("gh", ["auth", "login", "--web", "--git-protocol", "https"], {
+      stdio: "inherit",
+      shell: false
+    });
+
+    child.on("close", async () => {
+      resolve(await getGhAuthToken());
+    });
+
+    child.on("error", () => {
+      resolve(null);
+    });
+  });
 }
 
 export async function generateWithGitHubCopilot(
   files: string[],
   diffText: string,
   githubToken: string
-): Promise<{ action: string; highlights: string[] } | null> {
-  const copilotToken = await exchangeForCopilotToken(githubToken);
-  if (!copilotToken) {
-    return null;
+): Promise<CopilotResult> {
+  const truncatedDiff = diffText.length > 5000 ? `${diffText.slice(0, 5000)}\n...[diff truncated]` : diffText;
+  const prompt = COMMIT_PROMPT(files.slice(0, 40).join("\n"), truncatedDiff);
+
+  // Try GitHub Models API first — direct Bearer auth, no token exchange required
+  const modelsResult = await tryGitHubModels(githubToken, prompt);
+  if (modelsResult !== null) {
+    return modelsResult;
   }
 
-  const truncatedDiff = diffText.length > 8000 ? `${diffText.slice(0, 8000)}\n...[diff truncated]` : diffText;
-  const fileList = files.slice(0, 40).join("\n");
+  // Fall back to Copilot internal API (requires Copilot subscription)
+  const copilotToken = await exchangeForCopilotToken(githubToken);
+  if (!copilotToken) {
+    return { ok: false, reason: "no-subscription" };
+  }
 
-  const prompt = `You are writing a git commit message for a change set.
-
-Changed files:
-${fileList}
-
-Diff:
-${truncatedDiff}
-
-Respond with JSON only — no markdown, no explanation:
-{
-  "action": "<4-8 word verb phrase, e.g. 'add awesome-context metadata and UI tweaks'>",
-  "highlights": [
-    "<specific bullet: what was added/changed/removed>",
-    "<specific bullet: another key change>"
-  ]
+  return tryCopilotApi(copilotToken, prompt);
 }
 
-Rules:
-- action starts with a verb (add, fix, update, refactor, remove, etc.)
-- highlights name actual files, components, or features — be specific
-- 2-4 highlights maximum
-- do NOT use phrases like "this work", "repository-level updates", or "delivery summary"`;
+async function tryGitHubModels(githubToken: string, prompt: string): Promise<CopilotResult | null> {
+  try {
+    const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${githubToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: 400,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "You output only valid JSON. No markdown, no explanation, no prose. Just the JSON object."
+          },
+          { role: "user", content: prompt }
+        ]
+      })
+    });
 
+    if (!response.ok) {
+      return null;
+    }
+
+    return parseCompletionResponse(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+async function tryCopilotApi(copilotToken: string, prompt: string): Promise<CopilotResult> {
   try {
     const response = await fetch("https://api.githubcopilot.com/chat/completions", {
       method: "POST",
@@ -81,32 +126,50 @@ Rules:
       body: JSON.stringify({
         model: "gpt-4o-mini",
         max_tokens: 400,
-        messages: [{ role: "user", content: prompt }]
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "You output only valid JSON. No markdown, no explanation, no prose. Just the JSON object."
+          },
+          { role: "user", content: prompt }
+        ]
       })
     });
 
     if (!response.ok) {
-      return null;
+      return { ok: false, reason: "api-error" };
     }
 
-    const json = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-    const raw = json.choices?.[0]?.message?.content?.trim() ?? "";
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
+    return parseCompletionResponse(await response.json());
+  } catch {
+    return { ok: false, reason: "api-error" };
+  }
+}
 
+function parseCompletionResponse(json: unknown): CopilotResult {
+  const content = (json as { choices?: Array<{ message?: { content?: string } }> })
+    .choices?.[0]?.message?.content?.trim() ?? "";
+
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return { ok: false, reason: "parse-error" };
+  }
+
+  try {
     const parsed = JSON.parse(jsonMatch[0]) as { action?: unknown; highlights?: unknown };
     if (
       typeof parsed.action === "string" &&
       Array.isArray(parsed.highlights) &&
       parsed.highlights.every((h) => typeof h === "string")
     ) {
-      return { action: parsed.action, highlights: parsed.highlights as string[] };
+      return { ok: true, action: parsed.action, highlights: parsed.highlights as string[] };
     }
-
-    return null;
   } catch {
-    return null;
+    // fall through
   }
+
+  return { ok: false, reason: "parse-error" };
 }
 
 async function isGhCliAvailable(): Promise<boolean> {
