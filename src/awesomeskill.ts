@@ -122,6 +122,30 @@ function inflateRawAsync(data: Buffer): Promise<string> {
   });
 }
 
+// ─── Slug relevance scoring ───────────────────────────────────────────────────
+
+function scoreSlug(slug: string, skillName: string, stackKeywords: string[]): number {
+  const lower = slug.toLowerCase();
+  const skillTokens = skillName.toLowerCase().split(/[-\s]+/);
+  const stackTokens = stackKeywords.map((k) => k.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  let score = 0;
+
+  // Strong signal: slug contains the exact skill name or its tokens
+  for (const token of skillTokens) {
+    if (token.length >= 3 && lower.includes(token)) score += 4;
+  }
+
+  // Medium signal: slug contains stack keywords
+  for (const token of stackTokens) {
+    if (token.length >= 3 && lower.includes(token)) score += 2;
+  }
+
+  // Prefer shorter slugs (more focused, less org-prefix noise)
+  score -= Math.floor(slug.split("-").length / 4);
+
+  return score;
+}
+
 // ─── High-level: find best matching community skill ───────────────────────────
 
 export async function fetchBestMatchSkill(
@@ -131,8 +155,14 @@ export async function fetchBestMatchSkill(
   const slugs = await searchSkillSlugs([skillName, ...stackKeywords]);
   if (slugs.length === 0) return null;
 
-  // Try up to 3 slugs in order, return first that yields content
-  for (const slug of slugs.slice(0, 3)) {
+  // Score and sort — pick the most relevant slugs first
+  const ranked = slugs
+    .map((slug) => ({ slug, score: scoreSlug(slug, skillName, stackKeywords) }))
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.slug);
+
+  // Try top 3 ranked slugs, return first that yields content
+  for (const slug of ranked.slice(0, 3)) {
     const content = await fetchSkillContent(slug);
     if (content && content.length > 100) return content;
   }

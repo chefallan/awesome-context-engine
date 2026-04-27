@@ -158,6 +158,7 @@ type SkillDefinition = {
   name: string;
   title: string;
   description: string;
+  type: "infrastructure" | "semantic";
   triggers: string[];
   detect: (p: ProjectProfile) => boolean;
   fingerprint: (p: ProjectProfile) => string;
@@ -170,6 +171,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "build",
     title: "Build",
     description: "Compile and bundle this project for production",
+    type: "infrastructure",
     triggers: ["build", "compile", "bundle", "tsc", "transpile", "output to dist"],
     detect: (p) => Boolean(p.scripts["build"] || p.scripts["compile"]),
     fingerprint: (p) => [
@@ -184,7 +186,6 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const buildCmd = p.scripts["build"] ? runCmd(pm, "build") : "# no build script";
       const cleanCmd = p.scripts["clean"] ? `\n${runCmd(pm, "clean")}  # wipe dist first` : "";
       return [
-        `# Build\n`,
         `## Quick Start\n\`\`\`bash\n${buildCmd}\n\`\`\`\n`,
         `## How It Works\n- Runs \`${p.scripts["build"] ?? "build"}\`\n- Output lands in \`dist/\`\n- Stack: ${[...p.languages, ...p.frameworks].join(", ") || "unknown"}\n`,
         cleanCmd ? `## Clean Build\n\`\`\`bash\n${cleanCmd}\n${runCmd(pm, "build")}\n\`\`\`\n` : "",
@@ -196,6 +197,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "dev",
     title: "Dev Server",
     description: "Start the local development server with hot reload",
+    type: "infrastructure",
     triggers: ["dev server", "start dev", "watch mode", "hot reload", "local server"],
     detect: (p) => Boolean(p.scripts["dev"] || p.scripts["start"]),
     fingerprint: (p) => [p.scripts["dev"] ?? "", p.scripts["start"] ?? "", ...p.frameworks].join("|"),
@@ -205,7 +207,6 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const cmd = runCmd(p.packageManager, script);
       const port = p.frameworks.includes("Next.js") ? "3000" : p.frameworks.includes("Vite") ? "5173" : "detected at runtime";
       return [
-        `# Dev Server\n`,
         `## Quick Start\n\`\`\`bash\n${cmd}\n\`\`\`\n`,
         `## How It Works\n- Runs \`${p.scripts[script]}\`\n- Default port: ${port}\n- Changes hot-reload without restart\n`,
         `## Watch Out For\n- Stop any existing process on the same port before starting\n- Some env vars require a full restart to take effect\n`
@@ -216,6 +217,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "test",
     title: "Testing",
     description: "Run the test suite — unit, integration, and e2e",
+    type: "infrastructure",
     triggers: ["test", "spec", "unit test", "integration test", "e2e", "coverage", "passing tests"],
     detect: (p) => p.hasTests || Boolean(p.scripts["test"] || p.scripts["test:unit"] || p.scripts["test:e2e"]),
     fingerprint: (p) => [
@@ -232,7 +234,6 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const runners = p.frameworks.filter((f) => ["Jest", "Vitest", "Playwright", "Cypress"].includes(f));
       const variants = Object.keys(p.scripts).filter((k) => k.startsWith("test:") && k !== "test").map((k) => `${runCmd(pm, k)}  # ${k}`);
       return [
-        `# Testing\n`,
         `## Quick Start\n\`\`\`bash\n${runCmd(pm, testScript)}\n\`\`\`\n`,
         `## How It Works\n- Runner: ${runners.join(", ") || "node --test"}\n- Test files: \`**/*.test.*\` / \`**/*.spec.*\` / \`__tests__/\`\n`,
         variants.length ? `## Variants\n\`\`\`bash\n${variants.join("\n")}\n\`\`\`\n` : "",
@@ -244,6 +245,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "lint",
     title: "Lint & Format",
     description: "Check and fix code style, formatting, and static analysis",
+    type: "infrastructure",
     triggers: ["lint", "format", "eslint", "prettier", "fix style", "code quality", "type check"],
     detect: (p) => Boolean(p.scripts["lint"] || p.scripts["format"] || p.scripts["typecheck"] || p.configFiles.some((f) => f.includes("eslint") || f.includes("prettier"))),
     fingerprint: (p) => [
@@ -255,7 +257,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     relevantScripts: (p) => pickScripts(p.scripts, ["lint", "lint:fix", "format", "format:fix", "typecheck", "type-check"]),
     template: (p) => {
       const pm = p.packageManager;
-      const blocks: string[] = [`# Lint & Format\n`];
+      const blocks: string[] = [];
       if (p.scripts["lint"]) blocks.push(`## Lint\n\`\`\`bash\n${runCmd(pm, "lint")}        # check\n${p.scripts["lint:fix"] ? runCmd(pm, "lint:fix") + "    # auto-fix" : ""}\n\`\`\`\n`);
       if (p.scripts["format"]) blocks.push(`## Format\n\`\`\`bash\n${runCmd(pm, "format")}\n\`\`\`\n`);
       if (p.scripts["typecheck"] || p.scripts["type-check"]) {
@@ -270,12 +272,12 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "docker",
     title: "Docker",
     description: "Build images and manage containers for this project",
+    type: "infrastructure",
     triggers: ["docker", "container", "compose", "image", "dockerfile", "dockerize", "run in docker"],
     detect: (p) => p.hasDocker,
     fingerprint: (p) => p.configFiles.filter((f) => f.includes("docker")).join("|"),
     relevantScripts: (p) => pickScripts(p.scripts, ["docker:build", "docker:run", "docker:push", "docker:up", "docker:down"]),
     template: (_p) => [
-      `# Docker\n`,
       `## Quick Start\n\`\`\`bash\ndocker-compose up --build   # build + start all services\ndocker-compose down         # stop and remove containers\n\`\`\`\n`,
       `## Build Image Only\n\`\`\`bash\ndocker build -t app .       # build image\ndocker run -p 3000:3000 app # run container\n\`\`\`\n`,
       `## Useful Commands\n\`\`\`bash\ndocker-compose logs -f      # tail logs\ndocker-compose ps           # status\ndocker system prune         # clean up\n\`\`\`\n`,
@@ -286,6 +288,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "database",
     title: "Database",
     description: "Manage schema, migrations, and seed data",
+    type: "infrastructure",
     triggers: ["database", "migration", "schema", "seed", "db push", "prisma", "drizzle", "migrate"],
     detect: (p) => p.hasDatabase,
     fingerprint: (p) => [
@@ -298,7 +301,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     template: (p) => {
       const hasPrisma = p.frameworks.includes("Prisma");
       const hasDrizzle = p.frameworks.includes("Drizzle");
-      const blocks = [`# Database\n`];
+      const blocks: string[] = [];
       if (hasPrisma) {
         blocks.push(`## Prisma\n\`\`\`bash\nnpx prisma generate        # regenerate client after schema change\nnpx prisma migrate dev     # create + apply migration (dev)\nnpx prisma migrate deploy  # apply migrations (prod)\nnpx prisma db push         # push schema without migration history\nnpx prisma studio          # visual DB browser\n\`\`\`\n`);
         blocks.push(`## Watch Out For\n- Always run \`prisma generate\` after editing \`schema.prisma\`\n- Use \`migrate dev\` in development, \`migrate deploy\` in production\n- \`db push\` does not create migration files — use for prototyping only\n`);
@@ -314,6 +317,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "ci",
     title: "CI / CD",
     description: "Understand and work with the automated pipeline",
+    type: "infrastructure",
     triggers: ["ci", "cd", "pipeline", "workflow", "github actions", "failing pipeline", "what runs in ci"],
     detect: (p) => p.hasCI,
     fingerprint: (p) => p.configFiles.filter((f) => f.includes("workflow") || f.includes("gitlab")).join("|"),
@@ -322,7 +326,6 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const pm = p.packageManager;
       const ciChecks = ["lint", "typecheck", "test", "build"].filter((s) => p.scripts[s]).map((s) => runCmd(pm, s));
       return [
-        `# CI / CD\n`,
         `## What CI Runs\nThese are the scripts CI typically executes in order:\n\`\`\`bash\n${ciChecks.join("\n") || "# check .github/workflows/ for exact steps"}\n\`\`\`\n`,
         `## Workflow Location\n- GitHub Actions: \`.github/workflows/\`\n- PRs: lint + test + build\n- Merge to \`main\`: full pipeline + deploy (if configured)\n`,
         `## Reproduce Locally\nRun the same commands CI runs before pushing to catch failures early.\n`,
@@ -334,6 +337,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "release",
     title: "Release",
     description: "Cut a versioned release and publish the package",
+    type: "infrastructure",
     triggers: ["release", "publish", "bump version", "npm publish", "tag", "changelog", "ship"],
     detect: (p) => Boolean(p.scripts["release"] || p.scripts["publish"] || p.scripts["prepublishOnly"]),
     fingerprint: (p) => [p.scripts["release"] ?? "", p.scripts["publish"] ?? "", p.scripts["prepublishOnly"] ?? ""].join("|"),
@@ -342,7 +346,6 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const pm = p.packageManager;
       const releaseScript = ["release", "publish"].find((s) => p.scripts[s]);
       return [
-        `# Release\n`,
         `## Steps\n\`\`\`bash\n${runCmd(pm, "build")}           # ensure clean build\n${releaseScript ? runCmd(pm, releaseScript) + "         # cut the release" : "npm version patch    # bump version\nnpm publish          # publish to registry"}\n\`\`\`\n`,
         `## Pre-release Checklist\n- All tests pass: \`${runCmd(pm, "test")}\`\n- Working tree clean: \`git status\`\n- On the correct branch (usually \`main\`)\n- \`CHANGELOG.md\` updated if maintained\n`,
         `## Watch Out For\n- \`prepublishOnly\` runs automatically before \`npm publish\` — check what it does\n- Bump \`package.json\` version before running the release script if not automated\n- Use \`npm publish --dry-run\` to verify what will be uploaded\n`
@@ -356,15 +359,15 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "frontend",
     title: "Frontend & UI/UX",
     description: "Component patterns, layout conventions, and UI/UX guidelines for this project",
+    type: "semantic",
     triggers: ["ui", "ux", "ui/ux", "component", "frontend", "page", "layout", "design", "user interface", "user experience", "responsive", "accessible", "look and feel"],
     detect: (p) => p.hasFrontend,
-    fingerprint: (p) => [...p.frameworks, ...p.uiLibraries, ...p.stylingTools].join("|"),
+    fingerprint: (p) => [...new Set([...p.frameworks, ...p.uiLibraries, ...p.stylingTools])].join("|"),
     relevantScripts: (p) => pickScripts(p.scripts, ["dev", "start", "build", "storybook", "lint"]),
     template: (p) => {
       const stack = [...p.uiLibraries, ...p.stylingTools].join(", ") || "custom CSS";
       const fw = p.frameworks.filter((f) => ["Next.js", "Remix", "Nuxt", "Astro", "SvelteKit", "React", "Vue", "Angular", "Svelte"].includes(f)).join(", ");
       return [
-        `# Frontend & UI/UX\n`,
         `## Stack\n- Framework: ${fw || "unknown"}\n- UI: ${stack}\n`,
         `## Quick Start\n\`\`\`bash\n${runCmd(p.packageManager, p.scripts["dev"] ? "dev" : "start")}\n\`\`\`\n`,
         `## Component Conventions\n- Co-locate component, styles, and tests in the same folder\n- Prefer composition over large monolithic components\n- Keep presentational components free of data-fetching logic\n`,
@@ -378,6 +381,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "styling",
     title: "Styling System",
     description: "How to write, organize, and extend styles in this project",
+    type: "semantic",
     triggers: ["style", "css", "tailwind", "theme", "color", "design token", "dark mode", "spacing", "typography", "animation"],
     detect: (p) => p.stylingTools.length > 0,
     fingerprint: (p) => p.stylingTools.join("|"),
@@ -385,7 +389,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     template: (p) => {
       const hasTailwind = p.stylingTools.includes("Tailwind CSS");
       const hasModules = p.stylingTools.includes("CSS Modules");
-      const blocks = [`# Styling System\n`, `## Tools in Use\n${p.stylingTools.map((t) => `- ${t}`).join("\n")}\n`];
+      const blocks = [`## Tools in Use\n${p.stylingTools.map((t) => `- ${t}`).join("\n")}\n`];
       if (hasTailwind) {
         blocks.push(`## Tailwind\n- Config: \`tailwind.config.*\`\n- Extend theme in \`theme.extend\`, never override base tokens\n- Use \`cn()\` (clsx/tailwind-merge) to conditionally join classes\n- Purge is automatic in production — only classes in source files survive\n`);
       }
@@ -401,6 +405,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "components",
     title: "Component Library",
     description: "How to use and extend the UI component library in this project",
+    type: "semantic",
     triggers: ["component", "button", "modal", "dialog", "form", "input", "table", "card", "dropdown", "shadcn", "radix", "mui", "chakra", "design system"],
     detect: (p) => p.uiLibraries.length > 0,
     fingerprint: (p) => p.uiLibraries.join("|"),
@@ -409,7 +414,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const libs = p.uiLibraries.join(", ");
       const hasShadcn = p.uiLibraries.includes("shadcn/ui");
       const hasRadix = p.uiLibraries.includes("Radix UI");
-      const blocks = [`# Component Library\n`, `## Libraries\n${p.uiLibraries.map((l) => `- ${l}`).join("\n")}\n`];
+      const blocks = [`## Libraries\n${p.uiLibraries.map((l) => `- ${l}`).join("\n")}\n`];
       if (hasShadcn) {
         blocks.push(`## shadcn/ui\n- Add a component: \`npx shadcn@latest add <component>\`\n- Components land in \`components/ui/\` — they're owned by you, edit freely\n- Variants are managed via \`class-variance-authority\` (CVA) inside each component file\n`);
       }
@@ -425,6 +430,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "state-management",
     title: "State Management",
     description: "How state is structured, shared, and updated across this app",
+    type: "semantic",
     triggers: ["state", "store", "zustand", "redux", "context", "global state", "reactive", "shared data", "cache", "query"],
     detect: (p) => p.stateLibraries.length > 0,
     fingerprint: (p) => p.stateLibraries.join("|"),
@@ -433,7 +439,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const hasZustand = p.stateLibraries.includes("Zustand");
       const hasRedux = p.stateLibraries.includes("Redux Toolkit") || p.stateLibraries.includes("Redux");
       const hasQuery = p.stateLibraries.includes("TanStack Query") || p.stateLibraries.includes("SWR");
-      const blocks = [`# State Management\n`, `## Libraries\n${p.stateLibraries.map((l) => `- ${l}`).join("\n")}\n`];
+      const blocks = [`## Libraries\n${p.stateLibraries.map((l) => `- ${l}`).join("\n")}\n`];
       if (hasZustand) blocks.push(`## Zustand\n- Define stores in \`store/\` or alongside the feature they serve\n- Keep stores small and single-purpose\n- Use selectors to avoid unnecessary re-renders: \`useStore((s) => s.field)\`\n`);
       if (hasRedux) blocks.push(`## Redux Toolkit\n- Slices live in \`store/slices/\`\n- Use \`createAsyncThunk\` for async operations\n- Avoid putting derived data in the store — compute it with \`createSelector\`\n`);
       if (hasQuery) blocks.push(`## Server State (${p.stateLibraries.includes("TanStack Query") ? "TanStack Query" : "SWR"})\n- Server data belongs here, not in Zustand/Redux\n- Invalidate queries after mutations to keep UI in sync\n- Use stale-while-revalidate defaults; only override when you have a specific reason\n`);
@@ -446,6 +452,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "auth",
     title: "Authentication & Authorization",
     description: "How auth is implemented, sessions managed, and routes protected",
+    type: "semantic",
     triggers: ["auth", "login", "logout", "session", "jwt", "token", "protected route", "sign in", "sign up", "user", "permission", "role", "middleware"],
     detect: (p) => p.hasAuth,
     fingerprint: (p) => p.authLibraries.join("|"),
@@ -455,7 +462,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const hasClerk = p.authLibraries.some((l) => l === "Clerk");
       const hasSupabase = p.authLibraries.includes("Supabase Auth");
       const libs = p.authLibraries.join(", ") || "custom auth";
-      const blocks = [`# Authentication & Authorization\n`, `## Library\n${p.authLibraries.map((l) => `- ${l}`).join("\n") || "- custom"}\n`];
+      const blocks = [`## Library\n${p.authLibraries.map((l) => `- ${l}`).join("\n") || "- custom"}\n`];
       if (hasNextAuth) blocks.push(`## NextAuth / Auth.js\n- Config: \`auth.ts\` or \`app/api/auth/[...nextauth]/route.ts\`\n- Session: use \`getServerSession()\` in server components, \`useSession()\` in client\n- Protect routes via middleware in \`middleware.ts\`\n`);
       if (hasClerk) blocks.push(`## Clerk\n- Wrap app in \`<ClerkProvider>\`\n- Protect routes: \`clerkMiddleware()\` in \`middleware.ts\`\n- Use \`currentUser()\` server-side, \`useUser()\` client-side\n`);
       if (hasSupabase) blocks.push(`## Supabase Auth\n- Use \`supabase.auth.signInWithPassword()\` / \`signUp()\`\n- Session is stored in cookies — use SSR client for server components\n- Row-level security (RLS) policies enforce authorization at the DB layer\n`);
@@ -468,6 +475,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "api",
     title: "API Design & Conventions",
     description: "How API routes are structured, validated, and called in this project",
+    type: "semantic",
     triggers: ["api", "endpoint", "route", "rest", "http", "fetch", "request", "response", "server action", "trpc", "graphql", "webhook"],
     detect: (p) => p.hasApi || p.frameworks.some((f) => ["Next.js", "Remix", "NestJS", "Express", "Fastify"].includes(f)),
     fingerprint: (p) => [...p.frameworks, ...p.dependencies.filter((d) => ["trpc", "@trpc/server", "graphql", "apollo-server", "zod", "yup"].includes(d))].join("|"),
@@ -476,7 +484,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
       const hasNextJs = p.frameworks.includes("Next.js");
       const hasTrpc = p.dependencies.includes("@trpc/server");
       const hasZod = p.dependencies.includes("zod");
-      const blocks = [`# API Design & Conventions\n`];
+      const blocks: string[] = [];
       if (hasNextJs) blocks.push(`## Next.js API Routes\n- App Router: \`app/api/<route>/route.ts\` exports \`GET\`, \`POST\`, etc.\n- Server Actions: \`"use server"\` functions called directly from components\n- Always return \`NextResponse.json()\` with explicit status codes\n`);
       if (hasTrpc) blocks.push(`## tRPC\n- Routers live in \`server/routers/\` — compose into \`appRouter\`\n- Use \`publicProcedure\` / \`protectedProcedure\` for auth gating\n- Client uses the inferred type — never import server code into client bundles\n`);
       if (hasZod) blocks.push(`## Validation (Zod)\n- Define schemas alongside the route that uses them\n- Parse at the boundary: \`schema.parse(req.body)\` before any business logic\n- Use \`.safeParse()\` when you want to return a 400 instead of throwing\n`);
@@ -489,6 +497,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     name: "performance",
     title: "Performance",
     description: "How to measure and improve performance in this project",
+    type: "semantic",
     triggers: ["performance", "slow", "optimize", "bundle size", "lazy load", "code split", "cache", "lighthouse", "core web vitals", "render", "memory"],
     detect: (p) => p.hasFrontend,
     fingerprint: (p) => p.frameworks.slice(0, 3).join("|"),
@@ -496,7 +505,7 @@ const SKILL_DEFINITIONS: SkillDefinition[] = [
     template: (p) => {
       const hasNext = p.frameworks.includes("Next.js");
       const hasVite = p.frameworks.includes("Vite");
-      const blocks = [`# Performance\n`];
+      const blocks: string[] = [];
       if (hasNext) blocks.push(`## Next.js\n- Use \`next/image\` for all images — handles lazy load, sizing, and format\n- Use \`next/font\` to avoid layout shift from custom fonts\n- Dynamic import heavy components: \`const Comp = dynamic(() => import('./Comp'))\`\n- Check bundle: add \`@next/bundle-analyzer\` and run \`ANALYZE=true ${runCmd(p.packageManager, "build")}\`\n`);
       if (hasVite) blocks.push(`## Vite\n- Code-split with \`import()\` at route boundaries\n- Use \`rollup-plugin-visualizer\` to inspect bundle composition\n- \`vite preview\` serves the prod build locally for realistic profiling\n`);
       blocks.push(`## General\n- Defer non-critical JS with \`loading="lazy"\` / dynamic imports\n- Memoize expensive computations with \`useMemo\` / \`useCallback\` only after profiling\n- Avoid waterfalls: parallel-fetch independent data at the layout level\n`);
@@ -559,7 +568,9 @@ async function generateSkillBodyWithAI(
     ? `\nCommunity reference skill (adapt and improve for this specific project — do NOT copy verbatim):\n<reference>\n${communitySkill.slice(0, 2000)}\n</reference>\n`
     : "";
 
-  const prompt = `You are writing a developer skill playbook for a specific project.
+  const isInfrastructure = def.type === "infrastructure";
+
+  const infrastructurePrompt = `You are writing a developer skill playbook for a specific project.
 
 Skill: ${def.title}
 Purpose: ${def.description}
@@ -568,29 +579,72 @@ Package manager: ${profile.packageManager}
 Relevant scripts (only these, no others):
 ${scriptLines || "  (none)"}
 ${communitySection}
-Write a concise markdown playbook using EXACTLY these four sections (omit a section if empty):
+Write a concise markdown playbook using EXACTLY these sections (omit if empty):
 
 ## Quick Start
-One or two bash commands that handle the common case. Use exact script names from the list above.
+One or two bash commands for the common case. Exact script names from the list above only.
 
 ## How It Works
-2-4 bullet points explaining what actually happens under the hood. Stack-specific facts only.
+2-4 bullets on what actually happens. Stack-specific facts only.
 
 ## Variants
-Other relevant commands from the scripts list above (skip if none).
+Other commands from the scripts list (skip if none).
 
 ## Watch Out For
-1-3 project-specific gotchas. NO generic advice like "run npm install" or "make sure node is installed". Only warnings tied to this stack or these scripts.
+1-3 gotchas specific to this stack/scripts. No generic advice.
 
 Rules:
-- Use ${profile.packageManager} run syntax for all script invocations
-- Do NOT add a top-level # heading (it will be added automatically)
-- Do NOT invent scripts that are not in the list above
-- Be terse — a developer reading this already knows the basics
-- If a community reference was provided, extract the most relevant insights but tailor everything to this project's actual stack and scripts
+- Use ${profile.packageManager} syntax
+- Do NOT add a top-level # heading
+- Do NOT invent scripts not in the list above
+- Terse — developer already knows the basics
 
-Respond with JSON only:
-{ "body": "<markdown content with the four sections above>" }`;
+Respond with JSON: { "body": "<markdown>" }`;
+
+  const semanticPrompt = `You are a senior developer writing a project-specific skill guide for this exact codebase.
+
+Skill: ${def.title}
+Purpose: ${def.description}
+Tech stack: ${stack || "unknown"}
+Package manager: ${profile.packageManager}
+UI libraries: ${profile.uiLibraries.join(", ") || "none"}
+Styling: ${profile.stylingTools.join(", ") || "none"}
+State: ${profile.stateLibraries.join(", ") || "none"}
+Auth: ${profile.authLibraries.join(", ") || "none"}
+Has database: ${profile.hasDatabase}
+Has tests: ${profile.hasTests}
+${communitySection}
+Write a guide a teammate would find immediately useful. Use EXACTLY these sections (omit if empty):
+
+## Patterns & Conventions
+How things are structured and named in this project. Stack-specific decisions.
+For frontend: server vs client components, folder structure, naming.
+For auth: where session is checked, how routes are protected.
+For state: what goes in which store, when to use server state vs client state.
+
+## How To
+Concrete mini-guides for the 2-3 most common tasks this skill covers in this specific stack.
+Include brief code snippet if it clarifies (keep under 15 lines total).
+
+## Common Mistakes
+3-5 mistakes specific to THIS stack combination. Not generic warnings.
+Things that actually trip developers up with ${stack}.
+
+## Integration Notes
+How this skill connects to other parts of this project (auth, database, testing if present).
+Only mention integrations that actually exist in this project.
+
+Rules:
+- Use ${profile.packageManager} syntax for any commands
+- Do NOT add a top-level # heading
+- No generic advice ("make sure node is installed", "check the docs")
+- Be opinionated and specific — this is a guide, not a README
+- Maximum depth in minimum words
+
+Respond with JSON: { "body": "<markdown>" }`;
+
+  const prompt = isInfrastructure ? infrastructurePrompt : semanticPrompt;
+  const maxTokens = isInfrastructure ? 600 : 900;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (apiKey) {
@@ -598,7 +652,7 @@ Respond with JSON only:
       const client = new Anthropic({ apiKey });
       const response = await client.messages.create({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 600,
+        max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }]
       });
       const raw = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
@@ -610,7 +664,7 @@ Respond with JSON only:
   }
 
   if (githubToken) {
-    const raw = await callGitHubModels(githubToken, prompt);
+    const raw = await callGitHubModels(githubToken, prompt, maxTokens);
     if (raw) return parseAISkillResponse(raw);
   }
 

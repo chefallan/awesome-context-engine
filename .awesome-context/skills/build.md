@@ -2,7 +2,7 @@
 skill: build
 title: Build
 fingerprint: tsc||node -e "require('fs').rmSync('dist',{recursive:true,force:true})"
-generatedAt: 2026-04-27T15:23:41.333Z
+generatedAt: 2026-04-27T15:53:06.914Z
 locked: false
 ---
 
@@ -10,19 +10,21 @@ locked: false
 
 ## Quick Start
 
+To build the project for production:
+
 ```bash
 npm run clean
 npm run build
 ```
 
 ## How It Works
-- The `npm run clean` command removes the `dist` directory, ensuring a fresh build environment.
-- The `npm run build` command invokes TypeScript's compiler (`tsc`) to compile and bundle the project into the `dist` folder as per defined TypeScript configurations.
+- `npm run clean`: Removes the `dist` directory to ensure a fresh build environment.
+- `npm run build`: Compiles TypeScript files using the TypeScript compiler (tsc) into JavaScript, outputting them into the `dist` directory.
 
 ## Variants
 
-- None
+None.
 
 ## Watch Out For
-- Ensure your TypeScript configurations are correctly set up before building to avoid compilation errors.
-- If you modify TypeScript files directly without cleaning, you may run into issues with stale code in the `dist` directory.
+- Ensure TypeScript is correctly configured; missing configuration files can lead to build errors.
+- If `dist` contains untracked files, consider running `npm run clean` before the build to avoid stale files affecting the build output.

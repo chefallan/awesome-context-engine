@@ -81,7 +81,7 @@ export async function generateWithGitHubCopilot(
   return tryCopilotApi(copilotToken, prompt);
 }
 
-export async function callGitHubModels(githubToken: string, prompt: string): Promise<string | null> {
+export async function callGitHubModels(githubToken: string, prompt: string, maxTokens = 600): Promise<string | null> {
   try {
     const response = await fetch("https://models.inference.ai.azure.com/chat/completions", {
       method: "POST",
@@ -91,7 +91,7 @@ export async function callGitHubModels(githubToken: string, prompt: string): Pro
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        max_tokens: 600,
+        max_tokens: maxTokens,
         response_format: { type: "json_object" },
         messages: [
           {

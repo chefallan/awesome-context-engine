@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T15:28:22.606Z",
+  "generatedAt": "2026-04-27T16:08:15.033Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
   "totalFiles": 75,
   "totalDirectories": 38,
@@ -177,12 +177,12 @@
     {
       "path": "package-lock.json",
       "bytes": 25060,
-      "mtimeMs": 1777303698955.5818
+      "mtimeMs": 1777306092013.1653
     },
     {
       "path": "package.json",
       "bytes": 1319,
-      "mtimeMs": 1777303698934.3352
+      "mtimeMs": 1777306091989.0674
     },
     {
       "path": "README.md",
@@ -196,8 +196,8 @@
     },
     {
       "path": "src/awesomeskill.ts",
-      "bytes": 5581,
-      "mtimeMs": 1777303372374.8313
+      "bytes": 6757,
+      "mtimeMs": 1777305064265.1274
     },
     {
       "path": "src/benchmark.ts",
@@ -226,8 +226,8 @@
     },
     {
       "path": "src/github-copilot.ts",
-      "bytes": 6910,
-      "mtimeMs": 1777257856804.3145
+      "bytes": 6933,
+      "mtimeMs": 1777305016250.6387
     },
     {
       "path": "src/graph.ts",
@@ -261,8 +261,8 @@
     },
     {
       "path": "src/skills.ts",
-      "bytes": 39944,
-      "mtimeMs": 1777302150968.1182
+      "bytes": 41610,
+      "mtimeMs": 1777305002053.8662
     },
     {
       "path": "src/strict-mode.ts",
