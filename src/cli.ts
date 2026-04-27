@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { runTokenBenchmark } from "./benchmark.js";
 import { generateCommitMessageSuggestion } from "./commit-message.js";
+import { checkGhCopilotReadiness, loginWithGh } from "./github-copilot.js";
 import { runDoctor } from "./doctor.js";
 import { generateEodReport } from "./eod-report.js";
 import { initProject, type InitResult } from "./init.js";
@@ -401,8 +402,33 @@ async function runBenchmarkCommand(rootDir: string, options: CliOptions): Promis
   }
 }
 
+async function resolveGitHubToken(): Promise<string | undefined> {
+  if (process.env.ANTHROPIC_API_KEY) {
+    return undefined;
+  }
+
+  const readiness = await checkGhCopilotReadiness();
+
+  if (readiness.state === "ready") {
+    return readiness.token;
+  }
+
+  if (readiness.state === "needs-login") {
+    const want = await confirmPrompt(
+      "Login with GitHub to use Copilot AI for commit messages?",
+      true
+    );
+    if (!want) return undefined;
+    const token = await loginWithGh();
+    return token ?? undefined;
+  }
+
+  return undefined;
+}
+
 async function runCommitMessageCommand(rootDir: string, options: CliOptions): Promise<void> {
-  const result = await generateCommitMessageSuggestion(rootDir, { breaking: options.breaking });
+  const githubToken = await resolveGitHubToken();
+  const result = await generateCommitMessageSuggestion(rootDir, { breaking: options.breaking, githubToken });
 
   if (options.json) {
     const indent = options.compact ? undefined : 2;

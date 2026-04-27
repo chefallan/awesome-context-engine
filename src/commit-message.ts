@@ -1,7 +1,9 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
+import { generateWithGitHubCopilot } from "./github-copilot.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -57,6 +59,7 @@ type LastCommitInfo = {
 
 export type CommitMessageOptions = {
   breaking?: boolean;
+  githubToken?: string;
 };
 
 export type CommitMessageSuggestion = {
@@ -774,32 +777,6 @@ function toHumanList(items: string[]): string {
   return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
-function inferDeliverySummary(files: string[]): string {
-  const normalized = files.map((file) => normalizePath(file).toLowerCase());
-  const themes: string[] = [];
-
-  if (normalized.some((file) => file.startsWith("src/"))) {
-    themes.push("core CLI logic");
-  }
-  if (normalized.includes("readme.md") || normalized.some((file) => file.startsWith("docs/"))) {
-    themes.push("developer documentation");
-  }
-  if (normalized.some((file) => file.startsWith(".github/workflows/"))) {
-    themes.push("automation workflow");
-  }
-  if (normalized.some((file) => file === "package.json" || file.endsWith("-lock.json"))) {
-    themes.push("package configuration");
-  }
-  if (normalized.some((file) => file.startsWith("tests/") || file.includes(".test.") || file.includes(".spec."))) {
-    themes.push("test coverage");
-  }
-
-  if (themes.length === 0) {
-    return "repository-level updates";
-  }
-
-  return toHumanList(themes.slice(0, 3));
-}
 
 function inferIntent(type: CleanCommitType, action: string): string {
   switch (type) {
@@ -1044,6 +1021,69 @@ async function getChangedFiles(
   };
 }
 
+type AICommitSummary = {
+  action: string;
+  highlights: string[];
+};
+
+async function generateWithAI(files: string[], diffText: string, githubToken?: string): Promise<AICommitSummary | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return githubToken ? generateWithGitHubCopilot(files, diffText, githubToken) : null;
+  }
+
+  const truncatedDiff = diffText.length > 8000 ? `${diffText.slice(0, 8000)}\n...[diff truncated]` : diffText;
+  const fileList = files.slice(0, 40).join("\n");
+
+  const prompt = `You are writing a git commit message for a change set.
+
+Changed files:
+${fileList}
+
+Diff:
+${truncatedDiff}
+
+Respond with JSON only — no markdown, no explanation:
+{
+  "action": "<4-8 word verb phrase, e.g. 'add awesome-context metadata and UI tweaks'>",
+  "highlights": [
+    "<specific bullet: what was added/changed/removed>",
+    "<specific bullet: another key change>"
+  ]
+}
+
+Rules:
+- action starts with a verb (add, fix, update, refactor, remove, etc.)
+- highlights name actual files, components, or features — be specific
+- 2-4 highlights maximum
+- do NOT use phrases like "this work", "repository-level updates", or "delivery summary"`;
+
+  try {
+    const client = new Anthropic({ apiKey });
+    const response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 400,
+      messages: [{ role: "user", content: prompt }]
+    });
+
+    const raw = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+
+    const parsed = JSON.parse(jsonMatch[0]) as { action?: unknown; highlights?: unknown };
+    if (
+      typeof parsed.action === "string" &&
+      Array.isArray(parsed.highlights) &&
+      parsed.highlights.every((h) => typeof h === "string")
+    ) {
+      return { action: parsed.action, highlights: parsed.highlights as string[] };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateCommitMessageSuggestion(
   rootDir: string,
   options: CommitMessageOptions = {}
@@ -1057,15 +1097,17 @@ export async function generateCommitMessageSuggestion(
   }
 
   const patchText = await getChangePatchText(rootDir, changeSet.source, changeSet.files, changeSet.diffBase);
-  const concreteSummary = inferConcreteChangeSummary(changeSet.files, patchText);
-  const diffMetrics = await getDiffMetrics(rootDir, changeSet.source, changeSet.changes, changeSet.diffBase);
+  const [aiSummary, diffMetrics] = await Promise.all([
+    generateWithAI(changeSet.files, patchText, options.githubToken),
+    getDiffMetrics(rootDir, changeSet.source, changeSet.changes, changeSet.diffBase)
+  ]);
+  const concreteSummary = aiSummary ?? inferConcreteChangeSummary(changeSet.files, patchText);
   const commitType = inferCleanCommitType(changeSet.changes);
   const action = concreteSummary?.action ?? (changeSet.source === "initial-workspace" ? inferInitialAction(changeSet.files) : inferAction(changeSet.files, patchText, commitType));
   const scope = inferScope(changeSet.changes, commitType);
   const breakingRequested = Boolean(options.breaking);
   const breakingSupported = canUseBreakingMarker(commitType);
   const breaking = breakingRequested && breakingSupported;
-  const deliverySummary = inferDeliverySummary(changeSet.files);
 
   const title = toCleanCommitTitle(commitType, action, scope, breaking);
   const description = concreteSummary?.highlights.length
@@ -1074,12 +1116,8 @@ export async function generateCommitMessageSuggestion(
         changeSet.source === "initial-workspace"
           ? `This work captures the first commit from the current workspace to ${action}.`
           : inferIntent(commitType, action),
-        `Delivery summary: ${deliverySummary}.`
+        `Change scope: ${changeSet.files.length} file(s), +${diffMetrics.additions} / -${diffMetrics.deletions} lines.`
       ];
-
-  if (!concreteSummary) {
-    description.push(`Change scope: ${changeSet.files.length} file(s), +${diffMetrics.additions} / -${diffMetrics.deletions} lines.`);
-  }
 
   if (breakingRequested) {
     description.push(getBreakingNote(breakingRequested, breakingSupported, commitType));

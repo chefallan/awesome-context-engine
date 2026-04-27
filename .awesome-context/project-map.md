@@ -1,10 +1,10 @@
 # Project Map
 
-Generated at: 2026-04-25T23:05:25.364Z
+Generated at: 2026-04-27T01:01:05.656Z
 
 ## Repository Snapshot
-- Total files: 59
-- Total directories: 30
+- Total files: 73
+- Total directories: 38
 - Truncated scan: no
 
 ## Folder Tree (max depth 3)
@@ -17,6 +17,25 @@ Generated at: 2026-04-25T23:05:25.364Z
 │   ├── workflows/
 │   │   └── deploy-pages.yml
 │   └── copilot-instructions.md
+├── .tmp-fresh/
+│   ├── .continue/
+│   │   └── context.md
+│   ├── .github/
+│   │   └── copilot-instructions.md
+│   ├── .clinerules
+│   ├── AGENTS.md
+│   └── CLAUDE.md
+├── .tmp-fresh2/
+│   ├── .continue/
+│   │   └── context.md
+│   ├── .github/
+│   │   └── copilot-instructions.md
+│   ├── .vscode/
+│   │   └── tasks.json
+│   ├── .clinerules
+│   ├── AGENTS.md
+│   └── CLAUDE.md
+├── .tmp-no-context/
 ├── .vscode/
 │   └── tasks.json
 ├── assets/
@@ -37,9 +56,11 @@ Generated at: 2026-04-25T23:05:25.364Z
 │   ├── commit-message.ts
 │   ├── doctor.ts
 │   ├── eod-report.ts
+│   ├── github-copilot.ts
 │   ├── graph.ts
 │   ├── indexer.ts
 │   ├── init.ts
+│   ├── postinstall.ts
 │   ├── redact.ts
 │   ├── scan.ts
 │   ├── strict-mode.ts
@@ -54,6 +75,7 @@ Generated at: 2026-04-25T23:05:25.364Z
 │   │   └── commit-msg/
 │   └── commit-msg.test.mjs
 ├── .clinerules
+├── .env
 ├── .gitattributes
 ├── .gitignore
 ├── .npmignore
@@ -68,9 +90,9 @@ Generated at: 2026-04-25T23:05:25.364Z
 ```
 
 ## Detected Languages
-- TypeScript: 22
-- JSON: 12
-- Markdown: 9
+- TypeScript: 24
+- Markdown: 17
+- JSON: 13
 - JavaScript: 2
 - HTML: 1
 - YAML: 1
@@ -84,6 +106,7 @@ Generated at: 2026-04-25T23:05:25.364Z
 - root#build: tsc
 - root#clean: node -e "require('fs').rmSync('dist',{recursive:true,force:true})"
 - root#dev: tsc -w -p .
+- root#postinstall: node dist/postinstall.js
 - root#prepublishOnly: npm run build
 - root#release: node scripts/release.mjs
 - root#start: node dist/cli.js

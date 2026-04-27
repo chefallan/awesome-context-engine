@@ -1,6 +1,6 @@
 {
   "name": "awesome-context-engine",
-  "version": "1.2.5",
+  "version": "1.2.7",
   "description": "Drop-in persistent context and memory layer for AI coding tools.",
   "main": "./dist/cli.js",
   "bin": {
@@ -15,7 +15,8 @@
     "benchmark": "node dist/cli.js benchmark",
     "benchmark:docs-check": "npm run build && node dist/cli.js benchmark --json --compact",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "postinstall": "node dist/postinstall.js"
   },
   "keywords": [
     "cli",
@@ -41,8 +42,9 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.55.1",
     "@inquirer/prompts": "^8.4.2",
-    "awesome-context-engine": "^1.2.5",
+    "awesome-context-engine": "^1.2.7",
     "picocolors": "^1.1.1"
   }
 }
