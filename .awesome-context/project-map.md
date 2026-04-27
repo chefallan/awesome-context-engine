@@ -1,9 +1,9 @@
 # Project Map
 
-Generated at: 2026-04-27T02:47:56.589Z
+Generated at: 2026-04-27T15:28:22.606Z
 
 ## Repository Snapshot
-- Total files: 73
+- Total files: 75
 - Total directories: 38
 - Truncated scan: no
 
@@ -51,6 +51,7 @@ Generated at: 2026-04-27T02:47:56.589Z
 ├── scripts/
 │   └── release.mjs
 ├── src/
+│   ├── awesomeskill.ts
 │   ├── benchmark.ts
 │   ├── cli.ts
 │   ├── commit-message.ts
@@ -63,6 +64,7 @@ Generated at: 2026-04-27T02:47:56.589Z
 │   ├── postinstall.ts
 │   ├── redact.ts
 │   ├── scan.ts
+│   ├── skills.ts
 │   ├── strict-mode.ts
 │   ├── sync.ts
 │   ├── templates.ts
@@ -90,7 +92,7 @@ Generated at: 2026-04-27T02:47:56.589Z
 ```
 
 ## Detected Languages
-- TypeScript: 24
+- TypeScript: 26
 - Markdown: 17
 - JSON: 13
 - JavaScript: 2

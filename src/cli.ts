@@ -260,8 +260,9 @@ async function runFirstTimeExperience(rootDir: string, options: CliOptions): Pro
     return;
   }
 
+  const githubToken = await resolveGitHubToken();
   try {
-    const scanResult = await scanRepositoryContext(rootDir, { strict: options.strict });
+    const scanResult = await scanRepositoryContext(rootDir, { strict: options.strict, githubToken });
     success("Repository scanned");
     success("AI context synced");
     if (options.verbose) {
@@ -305,9 +306,10 @@ async function runDefault(rootDir: string, options: CliOptions): Promise<void> {
     return;
   }
 
+  const githubToken = await resolveGitHubToken();
   try {
     const indexResult = await indexProject(rootDir);
-    const syncResult = await syncContext(rootDir, { strict: options.strict });
+    const syncResult = await syncContext(rootDir, { strict: options.strict, githubToken });
 
     success("Project indexed and AI context synced");
     if (options.verbose) {
@@ -732,7 +734,24 @@ async function main(): Promise<void> {
         break;
       }
       case "sync": {
-        const result = await syncContext(rootDir, { strict: options.strict });
+        const syncGhToken = await resolveGitHubToken();
+        if (syncGhToken) {
+          secondary("Generating skills with GitHub Copilot...");
+        } else if (process.env.ANTHROPIC_API_KEY) {
+          secondary("Generating skills with Claude...");
+        }
+        const result = await syncContext(rootDir, {
+          strict: options.strict,
+          githubToken: syncGhToken,
+          onSkillPlan: (plan) => {
+            if (!options.verbose) return;
+            for (const { skill, action } of plan) {
+              if (action === "create") info(`[skills] create ${skill}`);
+              else if (action === "update") info(`[skills] update ${skill} (fingerprint changed)`);
+              else if (action === "skip-locked") info(`[skills] skip ${skill} (locked)`);
+            }
+          }
+        });
         success("AI context synced");
         if (options.verbose) {
           info(`[sync] wrote ${path.relative(rootDir, result.contextPath)} (${result.bytes} bytes)`);

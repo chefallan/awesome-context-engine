@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-27T02:47:56.589Z",
+  "generatedAt": "2026-04-27T15:28:22.606Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
-  "totalFiles": 73,
+  "totalFiles": 75,
   "totalDirectories": 38,
   "byExtension": {
     "[no-ext]": 9,
@@ -11,7 +11,7 @@
     ".png": 6,
     ".html": 1,
     ".mjs": 2,
-    ".ts": 24
+    ".ts": 26
   },
   "files": [
     {
@@ -177,12 +177,12 @@
     {
       "path": "package-lock.json",
       "bytes": 25060,
-      "mtimeMs": 1777258073563.813
+      "mtimeMs": 1777303698955.5818
     },
     {
       "path": "package.json",
       "bytes": 1319,
-      "mtimeMs": 1777258073537.5803
+      "mtimeMs": 1777303698934.3352
     },
     {
       "path": "README.md",
@@ -195,14 +195,19 @@
       "mtimeMs": 1777249671041.918
     },
     {
+      "path": "src/awesomeskill.ts",
+      "bytes": 5581,
+      "mtimeMs": 1777303372374.8313
+    },
+    {
       "path": "src/benchmark.ts",
       "bytes": 3170,
       "mtimeMs": 1777077149902.5059
     },
     {
       "path": "src/cli.ts",
-      "bytes": 24121,
-      "mtimeMs": 1777257888482.863
+      "bytes": 25006,
+      "mtimeMs": 1777300003823.733
     },
     {
       "path": "src/commit-message.ts",
@@ -231,8 +236,8 @@
     },
     {
       "path": "src/indexer.ts",
-      "bytes": 14789,
-      "mtimeMs": 1777093203558.1318
+      "bytes": 15214,
+      "mtimeMs": 1777298789287.7144
     },
     {
       "path": "src/init.ts",
@@ -241,8 +246,8 @@
     },
     {
       "path": "src/postinstall.ts",
-      "bytes": 1787,
-      "mtimeMs": 1777250947656.775
+      "bytes": 2512,
+      "mtimeMs": 1777298378102.2598
     },
     {
       "path": "src/redact.ts",
@@ -251,8 +256,13 @@
     },
     {
       "path": "src/scan.ts",
-      "bytes": 13671,
-      "mtimeMs": 1777093203690.382
+      "bytes": 13730,
+      "mtimeMs": 1777299483929.7073
+    },
+    {
+      "path": "src/skills.ts",
+      "bytes": 39944,
+      "mtimeMs": 1777302150968.1182
     },
     {
       "path": "src/strict-mode.ts",
@@ -261,8 +271,8 @@
     },
     {
       "path": "src/sync.ts",
-      "bytes": 7720,
-      "mtimeMs": 1777076547265.1284
+      "bytes": 8154,
+      "mtimeMs": 1777299993083.5405
     },
     {
       "path": "src/templates.ts",

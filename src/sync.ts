@@ -1,6 +1,8 @@
 import { promises as fs } from "node:fs";
 import { generateGraphContext } from "./graph.js";
+import { indexProject } from "./indexer.js";
 import { detectSensitiveMatches, redactSensitive } from "./redact.js";
+import { syncSkills } from "./skills.js";
 import { StrictModeViolationError } from "./strict-mode.js";
 import { getContextPaths } from "./templates.js";
 
@@ -11,6 +13,8 @@ export type SyncResult = {
 
 export type SyncOptions = {
   strict?: boolean;
+  githubToken?: string;
+  onSkillPlan?: (plan: { skill: string; action: string }[]) => void;
 };
 
 const MAX_CONTEXT_CHARS = 5500;
@@ -281,6 +285,12 @@ export async function syncContext(rootDir: string, options: SyncOptions = {}): P
   await fs.mkdir(paths.contextDir, { recursive: true });
 
   await generateGraphContext(rootDir, { strict: options.strict });
+
+  const indexData = await indexProject(rootDir, { writeMarkdown: false, writeJson: false });
+  const skillResult = await syncSkills(paths.skillsDir, indexData.data, {
+    githubToken: options.githubToken,
+    onPlan: options.onSkillPlan
+  });
 
   const memory = await readOptionalFile(paths.memoryPath);
   const preferences = await readOptionalFile(paths.preferencesPath);

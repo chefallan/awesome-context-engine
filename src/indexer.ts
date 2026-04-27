@@ -16,6 +16,8 @@ export type IndexData = {
   byExtension: Record<string, number>;
   files: IndexedFile[];
   truncated: boolean;
+  packageScripts: Record<string, string>;
+  dependencies: string[];
 };
 
 export type IndexResult = {
@@ -477,6 +479,13 @@ export async function indexProject(rootDir: string, options: IndexOptions = {}):
   const packageJsons = await discoverWorkspacePackages(rootDir, state.files);
   const scripts = collectWorkspaceScripts(packageJsons);
 
+  const mergedScripts: Record<string, string> = {};
+  const mergedDeps: string[] = [];
+  for (const pkg of packageJsons) {
+    Object.assign(mergedScripts, pkg.scripts);
+    mergedDeps.push(...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies));
+  }
+
   const data: IndexData = {
     generatedAt: new Date().toISOString(),
     rootDir,
@@ -484,7 +493,9 @@ export async function indexProject(rootDir: string, options: IndexOptions = {}):
     totalDirectories: state.totalDirectories,
     byExtension: state.byExtension,
     files: state.files,
-    truncated: state.truncated
+    truncated: state.truncated,
+    packageScripts: mergedScripts,
+    dependencies: [...new Set(mergedDeps)]
   };
 
   const frameworks = detectFrameworks(packageJsons, state.files);
