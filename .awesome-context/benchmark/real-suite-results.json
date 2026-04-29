@@ -1,0 +1,99 @@
+{
+  "generatedAt": "2026-04-29T05:01:41.058Z",
+  "methodology": {
+    "withoutAce": "Raw UTF-8 file content tokens from target file + recommendedRead files (chars/4).",
+    "withAce": "Actual `ace context:pack <file> --compact` output tokens (chars/4).",
+    "notes": [
+      "All rows are measured from real local command output.",
+      "No scaling multipliers or synthetic scenario projections are applied."
+    ]
+  },
+  "rows": [
+    {
+      "id": "api-bugfix-triage",
+      "model": "GPT-5",
+      "assistant": "VS Code Copilot Chat",
+      "contextSize": "large",
+      "repoTaskType": "TypeScript CLI core / command routing",
+      "targetFile": "src/cli.ts",
+      "withoutAceTokens": 19488,
+      "withAceTokens": 341,
+      "tokensSaved": 19147,
+      "reductionPercent": 98.25,
+      "baselineFiles": [
+        "src/cli.ts",
+        "src/awesomeskill.ts",
+        "src/benchmark.ts"
+      ]
+    },
+    {
+      "id": "auth-refactor",
+      "model": "Claude Sonnet 4",
+      "assistant": "VS Code Copilot Chat",
+      "contextSize": "medium",
+      "repoTaskType": "Learning profile logic / approval flow",
+      "targetFile": "src/genesis.ts",
+      "withoutAceTokens": 13587,
+      "withAceTokens": 386,
+      "tokensSaved": 13201,
+      "reductionPercent": 97.16,
+      "baselineFiles": [
+        "src/genesis.ts",
+        "src/awesomeskill.ts",
+        "src/benchmark.ts"
+      ]
+    },
+    {
+      "id": "ui-regression-fix",
+      "model": "Gemini 2.5 Pro",
+      "assistant": "VS Code Copilot Chat",
+      "contextSize": "medium",
+      "repoTaskType": "CLI UI rendering / formatting behavior",
+      "targetFile": "src/ui.ts",
+      "withoutAceTokens": 6705,
+      "withAceTokens": 361,
+      "tokensSaved": 6344,
+      "reductionPercent": 94.62,
+      "baselineFiles": [
+        "src/ui.ts",
+        "src/awesomeskill.ts",
+        "src/benchmark.ts"
+      ]
+    },
+    {
+      "id": "release-pipeline-edit",
+      "model": "o3",
+      "assistant": "VS Code Copilot Chat",
+      "contextSize": "small",
+      "repoTaskType": "Release automation script updates",
+      "targetFile": "scripts/release.mjs",
+      "withoutAceTokens": 7021,
+      "withAceTokens": 354,
+      "tokensSaved": 6667,
+      "reductionPercent": 94.96,
+      "baselineFiles": [
+        "scripts/release.mjs",
+        "scripts/benchmark-eval-harness.mjs",
+        "scripts/benchmark-external-github.mjs"
+      ]
+    },
+    {
+      "id": "docs-code-alignment",
+      "model": "GPT-4.1",
+      "assistant": "VS Code Copilot Chat",
+      "contextSize": "small",
+      "repoTaskType": "Documentation and command alignment",
+      "targetFile": "README.md",
+      "withoutAceTokens": 2566,
+      "withAceTokens": 335,
+      "tokensSaved": 2231,
+      "reductionPercent": 86.94,
+      "baselineFiles": [
+        "README.md",
+        "AGENTS.md",
+        "CLAUDE.md"
+      ]
+    }
+  ],
+  "markdownTable": "| Scenario | Model | Assistant | Context Size | Repo / Task Type | Without ACE Tokens | With ACE Tokens | Reduction | Data Source |\n| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |\n| api-bugfix-triage | GPT-5 | VS Code Copilot Chat | large | TypeScript CLI core / command routing | 19488 | 341 | 98.25% | measured local suite (src/cli.ts) |\n| auth-refactor | Claude Sonnet 4 | VS Code Copilot Chat | medium | Learning profile logic / approval flow | 13587 | 386 | 97.16% | measured local suite (src/genesis.ts) |\n| ui-regression-fix | Gemini 2.5 Pro | VS Code Copilot Chat | medium | CLI UI rendering / formatting behavior | 6705 | 361 | 94.62% | measured local suite (src/ui.ts) |\n| release-pipeline-edit | o3 | VS Code Copilot Chat | small | Release automation script updates | 7021 | 354 | 94.96% | measured local suite (scripts/release.mjs) |\n| docs-code-alignment | GPT-4.1 | VS Code Copilot Chat | small | Documentation and command alignment | 2566 | 335 | 86.94% | measured local suite (README.md) |"
+}

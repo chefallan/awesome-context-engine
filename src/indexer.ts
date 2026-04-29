@@ -39,6 +39,12 @@ type WalkState = {
   truncated: boolean;
 };
 
+type IgnoreRule = {
+  negate: boolean;
+  directoryOnly: boolean;
+  regex: RegExp;
+};
+
 const DEFAULT_MAX_FILES = 15000;
 const TREE_MAX_DEPTH = 3;
 
@@ -158,7 +164,89 @@ function getIndexerIgnoreNames(): Set<string> {
   const ignoreNames = getDefaultIgnoreNames();
   ignoreNames.add("coverage");
   ignoreNames.add(".awesome-context");
+  ignoreNames.add("vendor");
+  ignoreNames.add("vendors");
   return ignoreNames;
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function toGitignoreRegex(pattern: string): RegExp {
+  const normalized = pattern.replace(/^\//, "").replace(/\/$/, "");
+  const wildcard = normalized
+    .split("*")
+    .map((part) => escapeRegex(part))
+    .join(".*");
+
+  if (normalized.includes("/")) {
+    return new RegExp(`^${wildcard}(?:/.*)?$`);
+  }
+
+  return new RegExp(`(?:^|/)${wildcard}(?:/.*)?$`);
+}
+
+async function loadGitignoreRules(rootDir: string): Promise<IgnoreRule[]> {
+  const gitignorePath = path.join(rootDir, ".gitignore");
+  let raw = "";
+  try {
+    raw = await fs.readFile(gitignorePath, "utf8");
+  } catch {
+    return [];
+  }
+
+  const rules: IgnoreRule[] = [];
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const negate = trimmed.startsWith("!");
+    const core = negate ? trimmed.slice(1).trim() : trimmed;
+    if (!core) {
+      continue;
+    }
+
+    const directoryOnly = core.endsWith("/");
+    const regex = toGitignoreRegex(core);
+    rules.push({ negate, directoryOnly, regex });
+  }
+
+  return rules;
+}
+
+function matchesGitignore(relativePath: string, isDirectory: boolean, rules: IgnoreRule[]): boolean {
+  let ignored = false;
+  for (const rule of rules) {
+    if (rule.directoryOnly && !isDirectory) {
+      continue;
+    }
+    if (rule.regex.test(relativePath)) {
+      ignored = !rule.negate;
+    }
+  }
+  return ignored;
+}
+
+function isBinaryLike(filePath: string): boolean {
+  const lower = filePath.toLowerCase();
+  return /\.(png|jpg|jpeg|gif|webp|svg|ico|pdf|zip|gz|tar|tgz|7z|exe|dll|so|dylib|woff|woff2|ttf|eot|mp4|mp3|mov)$/i.test(lower);
+}
+
+function isLockfile(filePath: string): boolean {
+  const base = path.basename(filePath).toLowerCase();
+  return ["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lockb", "cargo.lock", "poetry.lock", "composer.lock"].includes(base);
+}
+
+function shouldSkipFile(relativePath: string): boolean {
+  const lower = relativePath.toLowerCase();
+  if (isLockfile(lower)) return true;
+  if (lower.endsWith(".min.js") || lower.endsWith(".min.css")) return true;
+  if (isBinaryLike(lower)) return true;
+  if (lower.includes("/.env") || lower.startsWith(".env")) return true;
+  return false;
 }
 
 async function readPackageJson(rootDir: string, packageRelativePath: string): Promise<PackageJsonData | null> {
@@ -513,7 +601,7 @@ function collectWorkspaceScripts(packageJsons: PackageJsonData[]): Array<{ name:
   return scripts.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-async function renderFolderTree(rootDir: string, ignoreNames: Set<string>, maxDepth: number): Promise<string[]> {
+async function renderFolderTree(rootDir: string, ignoreNames: Set<string>, gitignoreRules: IgnoreRule[], maxDepth: number): Promise<string[]> {
   const lines: string[] = ["."];
 
   const walk = async (currentDir: string, depth: number, prefix: string): Promise<void> => {
@@ -523,7 +611,19 @@ async function renderFolderTree(rootDir: string, ignoreNames: Set<string>, maxDe
 
     const entries = await fs.readdir(currentDir, { withFileTypes: true });
     const visibleEntries = entries
-      .filter((entry) => !ignoreNames.has(entry.name))
+      .filter((entry) => {
+        if (ignoreNames.has(entry.name)) {
+          return false;
+        }
+        const relativePath = path.relative(rootDir, path.join(currentDir, entry.name)).replace(/\\/g, "/");
+        if (matchesGitignore(relativePath, entry.isDirectory(), gitignoreRules)) {
+          return false;
+        }
+        if (entry.isFile() && shouldSkipFile(relativePath)) {
+          return false;
+        }
+        return true;
+      })
       .sort((a, b) => {
         if (a.isDirectory() && !b.isDirectory()) {
           return -1;
@@ -557,6 +657,7 @@ async function walkDirectory(
   currentDir: string,
   state: WalkState,
   ignoreNames: Set<string>,
+  gitignoreRules: IgnoreRule[],
   maxFiles: number
 ): Promise<void> {
   if (state.files.length >= maxFiles) {
@@ -575,9 +676,13 @@ async function walkDirectory(
     const absolutePath = path.join(currentDir, entry.name);
     const relativePath = path.relative(rootDir, absolutePath).replace(/\\/g, "/");
 
+    if (matchesGitignore(relativePath, entry.isDirectory(), gitignoreRules)) {
+      continue;
+    }
+
     if (entry.isDirectory()) {
       state.totalDirectories += 1;
-      await walkDirectory(rootDir, absolutePath, state, ignoreNames, maxFiles);
+      await walkDirectory(rootDir, absolutePath, state, ignoreNames, gitignoreRules, maxFiles);
       if (state.files.length >= maxFiles) {
         state.truncated = true;
         return;
@@ -586,6 +691,10 @@ async function walkDirectory(
     }
 
     if (!entry.isFile()) {
+      continue;
+    }
+
+    if (shouldSkipFile(relativePath)) {
       continue;
     }
 
@@ -761,7 +870,8 @@ export async function indexProject(rootDir: string, options: IndexOptions = {}):
   };
 
   const ignoreNames = getIndexerIgnoreNames();
-  await walkDirectory(rootDir, rootDir, state, ignoreNames, maxFiles);
+  const gitignoreRules = await loadGitignoreRules(rootDir);
+  await walkDirectory(rootDir, rootDir, state, ignoreNames, gitignoreRules, maxFiles);
 
   state.files.sort((a, b) => a.path.localeCompare(b.path));
 
@@ -794,7 +904,7 @@ export async function indexProject(rootDir: string, options: IndexOptions = {}):
   const topDirectories = pickTopDirectories(state.files);
   const dependencyHighlights = summarizeDependencies(packageJsons);
   const { testCommands, buildCommands } = detectCommands(scripts);
-  const treeLines = await renderFolderTree(rootDir, ignoreNames, TREE_MAX_DEPTH);
+  const treeLines = await renderFolderTree(rootDir, ignoreNames, gitignoreRules, TREE_MAX_DEPTH);
   const readmeSummary = await readReadmeSummary(rootDir);
 
   const markdown = renderIndexMarkdown(

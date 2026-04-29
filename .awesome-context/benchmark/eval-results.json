@@ -1,0 +1,189 @@
+{
+  "generatedAt": "2026-04-29T04:47:04.270Z",
+  "manifestPath": ".awesome-context/benchmark/eval-scenarios.json",
+  "outputPath": ".awesome-context/benchmark/eval-results.json",
+  "summary": {
+    "totalScenarios": 5,
+    "measuredScenarios": 0,
+    "estimatedScenarios": 5,
+    "averageEstimatedTokenReductionPercent": 62.85,
+    "averageEstimatedCostSavedUsd": 0.0083
+  },
+  "scenarios": [
+    {
+      "id": "api-bugfix-triage",
+      "model": "GPT-5 class",
+      "assistant": "VS Code Copilot Chat",
+      "repoTaskType": "TypeScript SaaS monorepo / API bugfix",
+      "contextSize": "large",
+      "source": "estimated",
+      "comparison": {
+        "withoutAce": {
+          "estimatedTokens": 4036,
+          "estimatedCostUsd": 0.0202
+        },
+        "withAce": {
+          "estimatedTokens": 1499,
+          "estimatedCostUsd": 0.0075
+        },
+        "delta": {
+          "estimatedTokensSaved": 2537,
+          "estimatedPercentSaved": 62.86,
+          "estimatedCostSavedUsd": 0.0127,
+          "relevanceImprovement": "higher",
+          "taskCompletion": {
+            "measurable": false,
+            "estimatedDeltaRange": "6-12% (estimated)"
+          }
+        }
+      },
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example.",
+        "Token and cost values are estimated from local baseline scaling.",
+        "Task completion delta is estimated, not measured pass-rate data."
+      ]
+    },
+    {
+      "id": "auth-refactor",
+      "model": "Claude class",
+      "assistant": "Claude Code",
+      "repoTaskType": "Node service repo / auth refactor",
+      "contextSize": "medium",
+      "source": "estimated",
+      "comparison": {
+        "withoutAce": {
+          "estimatedTokens": 2771,
+          "estimatedCostUsd": 0.0125
+        },
+        "withAce": {
+          "estimatedTokens": 1030,
+          "estimatedCostUsd": 0.0046
+        },
+        "delta": {
+          "estimatedTokensSaved": 1741,
+          "estimatedPercentSaved": 62.83,
+          "estimatedCostSavedUsd": 0.0079,
+          "relevanceImprovement": "higher",
+          "taskCompletion": {
+            "measurable": false,
+            "estimatedDeltaRange": "6-12% (estimated)"
+          }
+        }
+      },
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example.",
+        "Token and cost values are estimated from local baseline scaling.",
+        "Task completion delta is estimated, not measured pass-rate data."
+      ]
+    },
+    {
+      "id": "ui-regression-fix",
+      "model": "Gemini class",
+      "assistant": "Cursor",
+      "repoTaskType": "React frontend / UI regression",
+      "contextSize": "medium",
+      "source": "estimated",
+      "comparison": {
+        "withoutAce": {
+          "estimatedTokens": 2417,
+          "estimatedCostUsd": 0.0085
+        },
+        "withAce": {
+          "estimatedTokens": 898,
+          "estimatedCostUsd": 0.0031
+        },
+        "delta": {
+          "estimatedTokensSaved": 1519,
+          "estimatedPercentSaved": 62.85,
+          "estimatedCostSavedUsd": 0.0054,
+          "relevanceImprovement": "higher",
+          "taskCompletion": {
+            "measurable": false,
+            "estimatedDeltaRange": "6-12% (estimated)"
+          }
+        }
+      },
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example.",
+        "Token and cost values are estimated from local baseline scaling.",
+        "Task completion delta is estimated, not measured pass-rate data."
+      ]
+    },
+    {
+      "id": "release-pipeline-edit",
+      "model": "GPT-4 class",
+      "assistant": "Aider",
+      "repoTaskType": "DevOps-heavy repo / release pipeline edit",
+      "contextSize": "small",
+      "source": "estimated",
+      "comparison": {
+        "withoutAce": {
+          "estimatedTokens": 1799,
+          "estimatedCostUsd": 0.018
+        },
+        "withAce": {
+          "estimatedTokens": 668,
+          "estimatedCostUsd": 0.0067
+        },
+        "delta": {
+          "estimatedTokensSaved": 1131,
+          "estimatedPercentSaved": 62.87,
+          "estimatedCostSavedUsd": 0.0113,
+          "relevanceImprovement": "higher",
+          "taskCompletion": {
+            "measurable": false,
+            "estimatedDeltaRange": "6-12% (estimated)"
+          }
+        }
+      },
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example.",
+        "Token and cost values are estimated from local baseline scaling.",
+        "Task completion delta is estimated, not measured pass-rate data."
+      ]
+    },
+    {
+      "id": "docs-code-alignment",
+      "model": "Claude class",
+      "assistant": "OpenCode",
+      "repoTaskType": "Polyglot repo / docs + code alignment",
+      "contextSize": "small",
+      "source": "estimated",
+      "comparison": {
+        "withoutAce": {
+          "estimatedTokens": 1501,
+          "estimatedCostUsd": 0.0068
+        },
+        "withAce": {
+          "estimatedTokens": 558,
+          "estimatedCostUsd": 0.0025
+        },
+        "delta": {
+          "estimatedTokensSaved": 943,
+          "estimatedPercentSaved": 62.82,
+          "estimatedCostSavedUsd": 0.0043,
+          "relevanceImprovement": "higher",
+          "taskCompletion": {
+            "measurable": false,
+            "estimatedDeltaRange": "6-12% (estimated)"
+          }
+        }
+      },
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example.",
+        "Token and cost values are estimated from local baseline scaling.",
+        "Task completion delta is estimated, not measured pass-rate data."
+      ]
+    }
+  ],
+  "notes": [
+    "This is a SWE-bench-inspired evaluation framework for repeatable local comparisons.",
+    "Scenarios without measured fields are explicitly estimated/example rows.",
+    "Populate measured fields in .awesome-context/benchmark/eval-scenarios.json for real model/assistant run data."
+  ]
+}

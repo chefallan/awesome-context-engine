@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="awesome-context-engine is a cross-platform CLI for persistent repo memory, automatic context updates, clean commit message generation, and token-efficient AI coding workflows." />
+  <meta name="description" content="awesome-context-engine is a cross-platform CLI for persistent repo memory, context optimization, and token-efficient AI coding workflows." />
   <meta name="theme-color" content="#0b101a" />
   <meta property="og:title" content="awesome-context-engine" />
   <meta property="og:description" content="Portable repo memory for AI coding agents." />
@@ -308,7 +308,7 @@
       </div>
 
       <h1 id="title">awesome-context-engine</h1>
-      <p class="tagline">Portable repo memory and clean commit automation for AI coding agents</p>
+      <p class="tagline">Portable repo memory and context optimization for AI coding agents</p>
 
       <pre class="command" aria-label="install command">npx awesome-context-engine</pre>
 
@@ -322,7 +322,8 @@
         Keep AI coding context fresh without manual prompt wrangling.
         awesome-context-engine initializes repository memory, scans existing repositories to baseline context,
         indexes your project, syncs compact context files, and keeps durable memory for tools like
-        Claude, Cline, Continue, Cursor, and Codex.
+        Claude Code, Codex, OpenCode, Cursor, Gemini CLI, GitHub Copilot CLI, VS Code Copilot Chat, Aider,
+        OpenClaw, Factory Droid, Trae, Hermes, Kiro, Google Antigravity, Cline, and Continue.
       </p>
 
       <div class="feature-grid">
@@ -331,8 +332,8 @@
           Store reusable project context in <span class="mono">.awesome-context</span>.
         </div>
         <div class="feature-card">
-          <div class="feature-title">Auto Sync</div>
-          Watch file changes and keep context fresh with minimal effort.
+          <div class="feature-title">Flexible Sync</div>
+          Use low-RAM on-demand sync, optional hooks, or optional watch mode.
         </div>
         <div class="feature-card">
           <div class="feature-title">Token Efficient</div>
@@ -361,6 +362,74 @@
       </div>
     </section>
 
+    <section class="section" aria-labelledby="benchmark-title">
+      <h2 id="benchmark-title">Why Context Optimization Matters</h2>
+      <p>
+        The table below is a SWE-bench-inspired demonstration framework across models, assistants, and task types.
+        Values are estimated/example results for planning and communication, not universal guarantees.
+      </p>
+      <div style="margin-top: 14px; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px;">
+          <thead>
+            <tr>
+              <th style="text-align: left; border-bottom: 1px solid var(--border); padding: 8px;">Scenario</th>
+              <th style="text-align: left; border-bottom: 1px solid var(--border); padding: 8px;">Model</th>
+              <th style="text-align: left; border-bottom: 1px solid var(--border); padding: 8px;">Assistant</th>
+              <th style="text-align: left; border-bottom: 1px solid var(--border); padding: 8px;">Repo / Task</th>
+              <th style="text-align: right; border-bottom: 1px solid var(--border); padding: 8px;">Raw Tokens</th>
+              <th style="text-align: right; border-bottom: 1px solid var(--border); padding: 8px;">ACE Tokens</th>
+              <th style="text-align: right; border-bottom: 1px solid var(--border); padding: 8px;">Reduction</th>
+              <th style="text-align: left; border-bottom: 1px solid var(--border); padding: 8px;">Quality</th>
+              <th style="text-align: left; border-bottom: 1px solid var(--border); padding: 8px;">Completion Delta</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">API bugfix triage</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">GPT-5 class</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">VS Code Copilot Chat</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">TypeScript SaaS monorepo</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">12,400</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">6,900</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">44.4%</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Higher relevance</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">+8-12% (estimated)</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Auth refactor</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Claude class</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Claude Code</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Node service repo</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">9,100</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">5,200</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">42.9%</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Higher relevance</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">+6-10% (estimated)</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">UI regression fix</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Gemini class</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Cursor</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">React frontend</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">7,800</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">4,600</td>
+              <td style="padding: 8px; text-align: right; border-bottom: 1px solid rgba(38,51,79,.5);">41.0%</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">Higher relevance</td>
+              <td style="padding: 8px; border-bottom: 1px solid rgba(38,51,79,.5);">+5-9% (estimated)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top: 12px;">
+        For reproducible local measurement, run <span class="mono">ace benchmark</span> and use
+        <span class="mono">ace benchmark --json --compact</span> for dashboards.
+      </p>
+      <p style="margin-top: 8px;">
+        Methodology and interpretation guide:
+        <a href="https://github.com/chefallan/awesome-context-engine#example-ab-token-savings-measurement" target="_blank" rel="noreferrer" style="color: var(--accent);">README benchmark methodology</a>.
+      </p>
+    </section>
+
     <section class="section" aria-labelledby="quick-start-title">
       <h2 id="quick-start-title">Quick Start</h2>
       <p>Run the CLI from your repository root and follow the guided setup.</p>
@@ -369,7 +438,19 @@
         <li><span class="mono">npx awesome-context-engine scan</span> to baseline repository context for existing codebases.</li>
         <li><span class="mono">npx awesome-context-engine index</span> to refresh project structure mapping.</li>
         <li><span class="mono">npx awesome-context-engine sync</span> to regenerate compact AI context.</li>
-        <li><span class="mono">npx awesome-context-engine auto</span> to watch and update continuously.</li>
+        <li><span class="mono">npx awesome-context-engine context:pack src/cli.ts</span> to start focused, low-noise AI tasks.</li>
+      </ol>
+    </section>
+
+    <section class="section" aria-labelledby="first-five-title">
+      <h2 id="first-five-title">First 5 Minutes</h2>
+      <p>Use this short flow to start safe edits quickly with context-first commands.</p>
+      <ol class="command-list">
+        <li><span class="mono">ace init</span> to bootstrap map, graph, cache, and context artifacts.</li>
+        <li><span class="mono">ace context:pack src/cli.ts</span> to generate an edit-ready context brief.</li>
+        <li><span class="mono">ace context:impact src/cli.ts</span> to check direct and transitive impact before changes.</li>
+        <li><span class="mono">ace context:refresh</span> after meaningful edits to keep memory and metadata current.</li>
+        <li><span class="mono">ace learn:capture --from exports/session.txt --summary "first pass on cli changes"</span> to save useful, reusable learning.</li>
       </ol>
     </section>
 
@@ -381,17 +462,45 @@
         <li><span class="mono">ace memory search --query "markdown docs"</span> to retrieve relevant memory by intent.</li>
         <li><span class="mono">ace memory summarize</span> to condense stale memory into summaries.</li>
         <li><span class="mono">ace memory prune</span> to remove duplicates and low-value memory.</li>
+        <li><span class="mono">ace cache:status</span> to inspect ACE Cache tracked files, changes, and hit rate.</li>
+        <li><span class="mono">ace cache:clear</span> to remove <span class="mono">.awesome-context/cache.json</span> and force a cold rebuild.</li>
+        <li><span class="mono">ace graph --full</span> to bypass incremental mode and rebuild graph/context from source.</li>
+        <li><span class="mono">ace learn:capture --file exports/session.txt --summary "release checklist"</span> to capture an ACE Genesis experience.</li>
+        <li><span class="mono">ace learn:recall "release workflow"</span> to retrieve relevant prior experiences and preferences.</li>
+        <li><span class="mono">ace learn:suggest</span>, <span class="mono">ace learn:skill</span>, and <span class="mono">ace learn:reflect</span> to draft and improve reusable skills.</li>
         <li><span class="mono">npx awesome-context-engine scan --dry-run --verbose</span> to preview baseline context updates with no file writes.</li>
       </ul>
     </section>
 
-    <section class="section" aria-labelledby="auto-start-title">
-      <h2 id="auto-start-title">Auto-start on Reopen</h2>
+    <section class="section" aria-labelledby="ace-cache-title">
+      <h2 id="ace-cache-title">ACE Cache</h2>
       <p>
-        During setup, <span class="mono">init</span> performs a baseline repository scan automatically, so context files are ready immediately.
+        ACE Cache accelerates repeat runs by reusing extraction results for unchanged files while keeping source files as the
+        single source of truth. Cache data is stored in <span class="mono">.awesome-context/cache.json</span> and can be safely deleted at any time.
+      </p>
+    </section>
 
-        For continuous refresh, run <span class="mono">ace auto</span> in a terminal. For manual control, run
-        <span class="mono">ace sync</span> after prompt results that changed files.
+    <section class="section" aria-labelledby="ace-genesis-title">
+      <h2 id="ace-genesis-title">ACE Genesis</h2>
+      <p>
+        ACE Genesis is the local learning layer for repeated work. It captures approved task experiences, recalls relevant prior context,
+        suggests reusable skills, drafts those skills under <span class="mono">.awesome-context/skills/drafts/</span>, and tracks reflection notes over time.
+      </p>
+      <ul class="command-list">
+        <li><span class="mono">ace learn:capture</span> captures a task trace from file, stdin, or text input with redaction.</li>
+        <li><span class="mono">ace learn:recall</span> ranks memory by similarity, recency, project fit, and task type.</li>
+        <li><span class="mono">ace learn:profile</span> shows the current local user/project model.</li>
+        <li><span class="mono">ace learn:forget</span> removes selected experiences, suggestions, or profile entries.</li>
+      </ul>
+    </section>
+
+    <section class="section" aria-labelledby="auto-start-title">
+      <h2 id="auto-start-title">Refresh Strategy</h2>
+      <p>
+        Default workflow is low-RAM and explicit:
+        run <span class="mono">ace context:pack &lt;file&gt;</span> before focused work and
+        <span class="mono">ace sync</span> after meaningful file changes.
+        Use <span class="mono">ace auto</span> only if you want continuous watch mode on higher-spec machines.
       </p>
     </section>
 

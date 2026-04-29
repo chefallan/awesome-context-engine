@@ -76,6 +76,20 @@ async function readOptionalFile(filePath: string): Promise<string> {
   }
 }
 
+async function getSkillsEnabled(configPath: string): Promise<boolean> {
+  try {
+    const raw = await fs.readFile(configPath, "utf8");
+    const parsed = JSON.parse(raw) as { skills?: { enabled?: boolean } };
+    if (typeof parsed.skills?.enabled === "boolean") {
+      return parsed.skills.enabled;
+    }
+  } catch {
+    // Use default when config is missing or invalid.
+  }
+
+  return false;
+}
+
 function normalizeForDedupe(line: string): string {
   return line.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -305,9 +319,12 @@ export async function syncContext(rootDir: string, options: SyncOptions = {}): P
   await generateGraphContext(rootDir, { strict: options.strict });
 
   const indexData = await indexProject(rootDir, { writeMarkdown: false, writeJson: false });
-  const skillResult = await syncSkills(paths.skillsDir, indexData.data, {
-    onPlan: options.onSkillPlan
-  });
+  const skillsEnabled = await getSkillsEnabled(paths.configPath);
+  if (skillsEnabled) {
+    await syncSkills(paths.skillsDir, indexData.data, {
+      onPlan: options.onSkillPlan
+    });
+  }
 
   const memory = await readOptionalFile(paths.memoryPath);
   const preferences = await readOptionalFile(paths.preferencesPath);

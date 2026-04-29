@@ -1,6 +1,6 @@
 {
   "name": "awesome-context-engine",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Drop-in persistent context and memory layer for AI coding tools.",
   "main": "./dist/index.js",
   "exports": {
@@ -23,6 +23,15 @@
     "test": "npm run build && node --test test/*.test.mjs",
     "release": "node scripts/release.mjs",
     "benchmark": "node dist/cli.js benchmark",
+    "benchmark:eval": "node dist/cli.js benchmark:eval",
+    "benchmark:eval:prepare": "node scripts/benchmark-eval-harness.mjs prepare",
+    "benchmark:eval:validate": "node scripts/benchmark-eval-harness.mjs validate",
+    "benchmark:eval:apply": "node scripts/benchmark-eval-harness.mjs apply",
+    "benchmark:eval:run": "node scripts/benchmark-eval-harness.mjs run",
+    "benchmark:real": "node scripts/benchmark-real-suite.mjs",
+    "benchmark:external": "node scripts/benchmark-external-github.mjs",
+    "benchmark:readme": "node scripts/benchmark-readme-sync.mjs",
+    "benchmark:readme:check": "node scripts/benchmark-readme-sync.mjs --check",
     "benchmark:docs-check": "npm run build && node dist/cli.js benchmark --json --compact",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "prepublishOnly": "npm run build",
@@ -53,7 +62,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.55.1",
     "@inquirer/prompts": "^8.4.2",
-    "awesome-context-engine": "^1.4.0",
+    "awesome-context-engine": "2.0.0",
     "picocolors": "^1.1.1"
   }
 }

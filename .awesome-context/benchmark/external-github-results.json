@@ -1,0 +1,59 @@
+{
+  "generatedAt": "2026-04-29T05:01:49.743Z",
+  "scope": {
+    "assistant": "VS Code Copilot Chat",
+    "models": [
+      "GPT-5",
+      "Claude Sonnet 4",
+      "Gemini 2.5 Pro"
+    ]
+  },
+  "methodology": {
+    "cloneStrategy": "git clone --depth 1",
+    "benchmarkCommand": "node dist/cli.js benchmark --json --compact",
+    "notes": [
+      "All rows are measured from real benchmark command output on cloned GitHub repositories.",
+      "Token estimates use chars/4 as implemented by ace benchmark.",
+      "No synthetic scenario scaling is used in this external table."
+    ]
+  },
+  "rows": [
+    {
+      "id": "chalk-core",
+      "repo": "chalk/chalk",
+      "commit": "aa06bb5",
+      "model": "GPT-5",
+      "assistant": "VS Code Copilot Chat",
+      "repoTaskType": "Console formatting library maintenance",
+      "contextSize": "small",
+      "withoutAceTokens": 1828,
+      "withAceTokens": 850,
+      "reductionPercent": 53.5
+    },
+    {
+      "id": "ky-http-client",
+      "repo": "sindresorhus/ky",
+      "commit": "e0fcf78",
+      "model": "Claude Sonnet 4",
+      "assistant": "VS Code Copilot Chat",
+      "repoTaskType": "HTTP client feature and bugfix work",
+      "contextSize": "medium",
+      "withoutAceTokens": 2166,
+      "withAceTokens": 837,
+      "reductionPercent": 61.36
+    },
+    {
+      "id": "axios-networking",
+      "repo": "axios/axios",
+      "commit": "9fcdf48",
+      "model": "Gemini 2.5 Pro",
+      "assistant": "VS Code Copilot Chat",
+      "repoTaskType": "Networking stack fixes and refactors",
+      "contextSize": "large",
+      "withoutAceTokens": 4255,
+      "withAceTokens": 830,
+      "reductionPercent": 80.49
+    }
+  ],
+  "markdownTable": "| Scenario | Repository | Commit | Model | Assistant | Context Size | Without ACE Tokens | With ACE Tokens | Reduction | Data Source |\n| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |\n| chalk-core | chalk/chalk | aa06bb5 | GPT-5 | VS Code Copilot Chat | small | 1828 | 850 | 53.5% | measured external GitHub run |\n| ky-http-client | sindresorhus/ky | e0fcf78 | Claude Sonnet 4 | VS Code Copilot Chat | medium | 2166 | 837 | 61.36% | measured external GitHub run |\n| axios-networking | axios/axios | 9fcdf48 | Gemini 2.5 Pro | VS Code Copilot Chat | large | 4255 | 830 | 80.49% | measured external GitHub run |"
+}

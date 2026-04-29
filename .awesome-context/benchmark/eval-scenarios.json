@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-29T04:38:02.267Z",
+  "scenarios": [
+    {
+      "id": "api-bugfix-triage",
+      "model": "GPT-5 class",
+      "assistant": "VS Code Copilot Chat",
+      "repoTaskType": "TypeScript SaaS monorepo / API bugfix",
+      "contextSize": "large",
+      "contextMultiplier": 1.8,
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example."
+      ]
+    },
+    {
+      "id": "auth-refactor",
+      "model": "Claude class",
+      "assistant": "Claude Code",
+      "repoTaskType": "Node service repo / auth refactor",
+      "contextSize": "medium",
+      "contextMultiplier": 1.2,
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example."
+      ]
+    },
+    {
+      "id": "ui-regression-fix",
+      "model": "Gemini class",
+      "assistant": "Cursor",
+      "repoTaskType": "React frontend / UI regression",
+      "contextSize": "medium",
+      "contextMultiplier": 1.1,
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example."
+      ]
+    },
+    {
+      "id": "release-pipeline-edit",
+      "model": "GPT-4 class",
+      "assistant": "Aider",
+      "repoTaskType": "DevOps-heavy repo / release pipeline edit",
+      "contextSize": "small",
+      "contextMultiplier": 0.75,
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example."
+      ]
+    },
+    {
+      "id": "docs-code-alignment",
+      "model": "Claude class",
+      "assistant": "OpenCode",
+      "repoTaskType": "Polyglot repo / docs + code alignment",
+      "contextSize": "small",
+      "contextMultiplier": 0.65,
+      "notes": [
+        "Optional: add measured token/cost/relevance/success fields under measured for real run data.",
+        "Without measured fields this scenario stays estimated/example."
+      ]
+    }
+  ]
+}

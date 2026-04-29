@@ -6,6 +6,8 @@ export type ContextPaths = {
   contextDir: string;
   skillsDir: string;
   memoryDir: string;
+  fileContextPath: string;
+  cachePath: string;
   memoryPath: string;
   memoryItemsPath: string;
   memorySummariesPath: string;
@@ -18,6 +20,7 @@ export type ContextPaths = {
   projectMapPath: string;
   indexJsonPath: string;
   graphJsonPath: string;
+  impactMapPath: string;
   minimalContextPath: string;
 };
 
@@ -29,6 +32,8 @@ export function getContextPaths(rootDir: string): ContextPaths {
     contextDir,
     skillsDir: path.join(contextDir, "skills"),
     memoryDir,
+    fileContextPath: path.join(contextDir, "file-context.json"),
+    cachePath: path.join(contextDir, "cache.json"),
     memoryPath: path.join(contextDir, "memory.md"),
     memoryItemsPath: path.join(memoryDir, "items.json"),
     memorySummariesPath: path.join(memoryDir, "summaries.json"),
@@ -41,6 +46,7 @@ export function getContextPaths(rootDir: string): ContextPaths {
     projectMapPath: path.join(contextDir, "project-map.md"),
     indexJsonPath: path.join(contextDir, "project-index.json"),
     graphJsonPath: path.join(contextDir, "graph.json"),
+    impactMapPath: path.join(contextDir, "impact-map.json"),
     minimalContextPath: path.join(contextDir, "minimal-context.md")
   };
 }
