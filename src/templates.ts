@@ -5,10 +5,15 @@ export const CONTEXT_DIR_NAME = ".awesome-context";
 export type ContextPaths = {
   contextDir: string;
   skillsDir: string;
+  memoryDir: string;
   memoryPath: string;
+  memoryItemsPath: string;
+  memorySummariesPath: string;
+  memoryIndexPath: string;
   workflowsPath: string;
   decisionsPath: string;
   preferencesPath: string;
+  configPath: string;
   aiContextPath: string;
   projectMapPath: string;
   indexJsonPath: string;
@@ -18,14 +23,20 @@ export type ContextPaths = {
 
 export function getContextPaths(rootDir: string): ContextPaths {
   const contextDir = path.join(rootDir, CONTEXT_DIR_NAME);
+  const memoryDir = path.join(contextDir, "memory");
 
   return {
     contextDir,
     skillsDir: path.join(contextDir, "skills"),
+    memoryDir,
     memoryPath: path.join(contextDir, "memory.md"),
+    memoryItemsPath: path.join(memoryDir, "items.json"),
+    memorySummariesPath: path.join(memoryDir, "summaries.json"),
+    memoryIndexPath: path.join(memoryDir, "index.json"),
     workflowsPath: path.join(contextDir, "workflows.md"),
     decisionsPath: path.join(contextDir, "decisions.md"),
     preferencesPath: path.join(contextDir, "preferences.md"),
+    configPath: path.join(contextDir, "config.json"),
     aiContextPath: path.join(contextDir, "ai-context.md"),
     projectMapPath: path.join(contextDir, "project-map.md"),
     indexJsonPath: path.join(contextDir, "project-index.json"),

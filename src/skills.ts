@@ -2,7 +2,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fetchBestMatchSkill } from "./awesomeskill.js";
-import { callGitHubModels } from "./github-copilot.js";
 import type { IndexData } from "./indexer.js";
 
 // ─── Project profile ────────────────────────────────────────────────────────
@@ -555,8 +554,7 @@ function buildSkillFile(def: SkillDefinition, fingerprint: string, body: string)
 
 async function generateSkillBodyWithAI(
   def: SkillDefinition,
-  profile: ProjectProfile,
-  githubToken?: string
+  profile: ProjectProfile
 ): Promise<string | null> {
   const stack = [...profile.languages, ...profile.frameworks].filter(Boolean).join(", ");
   const relevant = def.relevantScripts(profile);
@@ -659,13 +657,8 @@ Respond with JSON: { "body": "<markdown>" }`;
       const body = parseAISkillResponse(raw);
       if (body) return body;
     } catch {
-      // fall through to Copilot
+      // fall through to template
     }
-  }
-
-  if (githubToken) {
-    const raw = await callGitHubModels(githubToken, prompt, maxTokens);
-    if (raw) return parseAISkillResponse(raw);
   }
 
   return null;
@@ -734,7 +727,6 @@ async function planSkills(skillsDir: string, profile: ProjectProfile): Promise<S
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export type SkillSyncOptions = {
-  githubToken?: string;
   onPlan?: (plan: { skill: string; action: SkillAction }[]) => void;
 };
 
@@ -767,7 +759,7 @@ export async function syncSkills(
     toWrite.map(async (plan) => {
       const { def, skillPath, fingerprint, action } = plan;
 
-      const aiBody = await generateSkillBodyWithAI(def, profile, options.githubToken);
+      const aiBody = await generateSkillBodyWithAI(def, profile);
       const body = aiBody ?? def.template(profile);
       const fileContent = buildSkillFile(def, fingerprint, `# ${def.title}\n\n${body}`);
 

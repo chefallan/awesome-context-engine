@@ -124,8 +124,26 @@ const IMPORTANT_CONFIG_FILES = [
   "docker-compose.yaml"
 ];
 
+const NON_PRIMARY_PATH_SEGMENTS = [
+  "fixture",
+  "fixtures",
+  "example",
+  "examples",
+  "sample",
+  "samples",
+  "demo",
+  "demos",
+  "mock",
+  "mocks",
+  "tmp",
+  "temp",
+  "sandbox"
+];
+
 type PackageJsonData = {
   packagePath: string;
+  name?: string;
+  description?: string;
   scripts: Record<string, string>;
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
@@ -155,6 +173,11 @@ async function readPackageJson(rootDir: string, packageRelativePath: string): Pr
 
     return {
       packagePath: packageRelativePath,
+      name: typeof (parsed as { name?: string }).name === "string" ? (parsed as { name?: string }).name : undefined,
+      description:
+        typeof (parsed as { description?: string }).description === "string"
+          ? (parsed as { description?: string }).description
+          : undefined,
       scripts: parsed.scripts ?? {},
       dependencies: parsed.dependencies ?? {},
       devDependencies: parsed.devDependencies ?? {}
@@ -260,7 +283,206 @@ function pickEntrypoints(files: IndexedFile[]): string[] {
     .map((file) => file.path)
     .filter((filePath) => ENTRYPOINT_NAMES.has(path.basename(filePath).toLowerCase()));
 
-  return entrypoints.sort((a, b) => a.localeCompare(b));
+  return entrypoints.sort((a, b) => scorePathForBrowsing(b) - scorePathForBrowsing(a) || a.localeCompare(b));
+}
+
+function scorePathForBrowsing(filePath: string): number {
+  const normalized = filePath.replace(/\\/g, "/").toLowerCase();
+  const segments = normalized.split("/");
+  let score = 0;
+
+  if (normalized.startsWith("src/")) score += 40;
+  if (normalized === "package.json") score += 35;
+  if (normalized === "tsconfig.json") score += 20;
+  if (normalized.startsWith("scripts/")) score += 12;
+  if (normalized.startsWith("docs/")) score += 8;
+  if (normalized.startsWith("test/")) score -= 18;
+  if (normalized.includes("/.tmp-") || normalized.startsWith(".tmp-")) score -= 40;
+  if (segments.some((segment) => NON_PRIMARY_PATH_SEGMENTS.includes(segment))) score -= 30;
+
+  return score;
+}
+
+function isPrimaryBrowsePath(filePath: string): boolean {
+  return scorePathForBrowsing(filePath) >= 0;
+}
+
+function partitionWorkspacePackages(packageJsons: PackageJsonData[]): {
+  primary: PackageJsonData[];
+  auxiliary: PackageJsonData[];
+} {
+  const primary: PackageJsonData[] = [];
+  const auxiliary: PackageJsonData[] = [];
+
+  for (const pkg of packageJsons) {
+    if (isPrimaryBrowsePath(pkg.packagePath)) {
+      primary.push(pkg);
+    } else {
+      auxiliary.push(pkg);
+    }
+  }
+
+  return { primary, auxiliary };
+}
+
+function partitionTopDirectories(directories: Array<{ name: string; files: number }>): {
+  primary: Array<{ name: string; files: number }>;
+  auxiliary: Array<{ name: string; files: number }>;
+} {
+  const primary: Array<{ name: string; files: number }> = [];
+  const auxiliary: Array<{ name: string; files: number }> = [];
+
+  for (const dir of directories) {
+    if (isPrimaryBrowsePath(`${dir.name}/`)) {
+      primary.push(dir);
+    } else {
+      auxiliary.push(dir);
+    }
+  }
+
+  return { primary, auxiliary };
+}
+
+function partitionEntrypoints(entrypoints: string[]): { primary: string[]; auxiliary: string[] } {
+  const primary: string[] = [];
+  const auxiliary: string[] = [];
+
+  for (const entrypoint of entrypoints) {
+    if (isPrimaryBrowsePath(entrypoint)) {
+      primary.push(entrypoint);
+    } else {
+      auxiliary.push(entrypoint);
+    }
+  }
+
+  return { primary, auxiliary };
+}
+
+function pickTopDirectories(files: IndexedFile[]): Array<{ name: string; files: number }> {
+  const counts: Record<string, number> = {};
+
+  for (const file of files) {
+    const topLevel = file.path.split("/")[0];
+    if (!topLevel || topLevel === ".") {
+      continue;
+    }
+    counts[topLevel] = (counts[topLevel] ?? 0) + 1;
+  }
+
+  return Object.entries(counts)
+    .map(([name, fileCount]) => ({ name, files: fileCount }))
+    .sort((a, b) => {
+      const scoreDiff = scorePathForBrowsing(`${b.name}/`) - scorePathForBrowsing(`${a.name}/`);
+      if (scoreDiff !== 0) {
+        return scoreDiff;
+      }
+      return b.files - a.files || a.name.localeCompare(b.name);
+    });
+}
+
+function summarizeDependencies(packageJsons: PackageJsonData[], limit = 14): string[] {
+  const counts: Record<string, number> = {};
+
+  for (const pkg of packageJsons) {
+    for (const dep of [...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)]) {
+      counts[dep] = (counts[dep] ?? 0) + 1;
+    }
+  }
+
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([name]) => name);
+}
+
+async function readReadmeSummary(rootDir: string): Promise<string | null> {
+  const candidates = ["README.md", "readme.md"];
+
+  for (const candidate of candidates) {
+    const fullPath = path.join(rootDir, candidate);
+    try {
+      const raw = await fs.readFile(fullPath, "utf8");
+      const lines = raw
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .filter((line) => !line.startsWith("#"))
+        .filter((line) => !line.startsWith("!["))
+        .filter((line) => !line.startsWith("[!["));
+
+      const summary = lines.find((line) => line.length >= 30 && line.length <= 220);
+      if (summary) {
+        return summary;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function renderWorkspacePackages(packageJsons: PackageJsonData[]): string {
+  if (packageJsons.length === 0) {
+    return "- none detected";
+  }
+
+  return packageJsons
+    .slice()
+    .sort((a, b) => scorePathForBrowsing(b.packagePath) - scorePathForBrowsing(a.packagePath) || a.packagePath.localeCompare(b.packagePath))
+    .map((pkg) => {
+      const scope = pkg.packagePath === "package.json" ? "root" : path.posix.dirname(pkg.packagePath.replace(/\\/g, "/"));
+      const name = pkg.name ?? "(unnamed package)";
+      const description = pkg.description ? `: ${pkg.description}` : "";
+      return `- ${scope} -> ${name}${description}`;
+    })
+    .join("\n");
+}
+
+function renderDirectoryLines(directories: Array<{ name: string; files: number }>): string {
+  if (directories.length === 0) {
+    return "- none detected";
+  }
+
+  return directories.map((dir) => `- ${dir.name}/: ${dir.files} files`).join("\n");
+}
+
+function buildBrowseFirstLines(params: {
+  readmeSummary: string | null;
+  importantConfigs: string[];
+  entrypoints: string[];
+  topDirectories: Array<{ name: string; files: number }>;
+  testCommands: Array<{ name: string; command: string }>;
+  buildCommands: Array<{ name: string; command: string }>;
+}): string[] {
+  const lines: string[] = [];
+
+  if (params.readmeSummary) {
+    lines.push(`Start with README intent: ${params.readmeSummary}`);
+  }
+
+  const primaryEntrypoints = params.entrypoints.filter((entrypoint) => isPrimaryBrowsePath(entrypoint));
+  for (const entrypoint of primaryEntrypoints.slice(0, 3)) {
+    lines.push(`Inspect entrypoint: ${entrypoint}`);
+  }
+
+  for (const config of params.importantConfigs.slice(0, 3)) {
+    lines.push(`Inspect config: ${config}`);
+  }
+
+  const primaryDirectories = params.topDirectories.filter((dir) => isPrimaryBrowsePath(`${dir.name}/`));
+  for (const dir of primaryDirectories.slice(0, 3)) {
+    lines.push(`Browse directory: ${dir.name}/ (${dir.files} files)`);
+  }
+
+  if (params.buildCommands[0]) {
+    lines.push(`Build command: ${params.buildCommands[0].name}`);
+  }
+  if (params.testCommands[0]) {
+    lines.push(`Test command: ${params.testCommands[0].name}`);
+  }
+
+  return lines;
 }
 
 function detectCommands(
@@ -387,13 +609,16 @@ async function walkDirectory(
 function renderIndexMarkdown(
   data: IndexData,
   treeLines: string[],
+  readmeSummary: string | null,
+  packageJsons: PackageJsonData[],
   languages: Array<{ language: string; files: number }>,
   frameworks: string[],
   scripts: Array<{ name: string; command: string }>,
   importantConfigs: string[],
   testCommands: Array<{ name: string; command: string }>,
   buildCommands: Array<{ name: string; command: string }>,
-  entrypoints: string[]
+  entrypoints: string[],
+  dependencyHighlights: string[]
 ): string {
   const languageLines = languages.length
     ? languages.map((item) => `- ${item.language}: ${item.files}`).join("\n")
@@ -417,8 +642,48 @@ function renderIndexMarkdown(
     ? buildCommands.map((item) => `- ${item.name}: ${item.command}`).join("\n")
     : "- none detected";
 
-  const entrypointLines = entrypoints.length
-    ? entrypoints.map((filePath) => `- ${filePath}`).join("\n")
+  const entrypointGroups = partitionEntrypoints(entrypoints);
+  const entrypointLines = entrypointGroups.primary.length
+    ? entrypointGroups.primary.map((filePath) => `- ${filePath}`).join("\n")
+    : "- none detected";
+  const auxiliaryEntrypointLines = entrypointGroups.auxiliary.length
+    ? entrypointGroups.auxiliary.map((filePath) => `- ${filePath}`).join("\n")
+    : "- none detected";
+
+  const packageGroups = partitionWorkspacePackages(packageJsons);
+  const primaryPackageLines = renderWorkspacePackages(packageGroups.primary);
+  const auxiliaryPackageLines = renderWorkspacePackages(packageGroups.auxiliary);
+  const directoryGroups = partitionTopDirectories(pickTopDirectories(data.files));
+
+  const topDirectoryLines = renderDirectoryLines(directoryGroups.primary.slice(0, 8));
+  const auxiliaryDirectoryLines = renderDirectoryLines(directoryGroups.auxiliary.slice(0, 8));
+
+  const dependencyLines = dependencyHighlights.length
+    ? dependencyHighlights.map((dependency) => `- ${dependency}`).join("\n")
+    : "- none detected";
+
+  const identityLines = [
+    packageJsons[0]?.name ? `- Root package: ${packageJsons[0].name}` : "- Root package: unknown",
+    packageJsons[0]?.description
+      ? `- Package description: ${packageJsons[0].description}`
+      : readmeSummary
+        ? `- README summary: ${readmeSummary}`
+        : "- README summary: none detected",
+    `- Workspace packages: ${packageJsons.length}`,
+    `- Direct dependencies indexed: ${data.dependencies.length}`
+  ].join("\n");
+
+  const browseFirstLines = buildBrowseFirstLines({
+    readmeSummary,
+    importantConfigs,
+    entrypoints,
+    topDirectories: pickTopDirectories(data.files),
+    testCommands,
+    buildCommands
+  });
+
+  const browseFirst = browseFirstLines.length
+    ? browseFirstLines.map((line) => `- ${line}`).join("\n")
     : "- none detected";
 
   return `# Project Map
@@ -429,6 +694,18 @@ Generated at: ${data.generatedAt}
 - Total files: ${data.totalFiles}
 - Total directories: ${data.totalDirectories}
 - Truncated scan: ${data.truncated ? "yes" : "no"}
+
+## Repository Identity
+${identityLines}
+
+## Browse First
+${browseFirst}
+
+## Workspace Packages
+${primaryPackageLines}
+
+## Auxiliary Packages
+${auxiliaryPackageLines}
 
 ## Folder Tree (max depth 3)
 
@@ -456,6 +733,18 @@ ${buildLines}
 
 ## Entrypoints
 ${entrypointLines}
+
+## Auxiliary Entrypoints
+${auxiliaryEntrypointLines}
+
+## Key Directories
+${topDirectoryLines}
+
+## Auxiliary Paths
+${auxiliaryDirectoryLines}
+
+## Dependency Highlights
+${dependencyLines}
 `;
 }
 
@@ -502,19 +791,25 @@ export async function indexProject(rootDir: string, options: IndexOptions = {}):
   const languages = detectLanguages(state.byExtension);
   const importantConfigs = pickImportantConfigs(state.files);
   const entrypoints = pickEntrypoints(state.files);
+  const topDirectories = pickTopDirectories(state.files);
+  const dependencyHighlights = summarizeDependencies(packageJsons);
   const { testCommands, buildCommands } = detectCommands(scripts);
   const treeLines = await renderFolderTree(rootDir, ignoreNames, TREE_MAX_DEPTH);
+  const readmeSummary = await readReadmeSummary(rootDir);
 
   const markdown = renderIndexMarkdown(
     data,
     treeLines,
+    readmeSummary,
+    packageJsons,
     languages,
     frameworks,
     scripts,
     importantConfigs,
     testCommands,
     buildCommands,
-    entrypoints
+    entrypoints,
+    dependencyHighlights
   );
   if (options.writeMarkdown !== false) {
     await fs.writeFile(paths.projectMapPath, markdown, "utf8");

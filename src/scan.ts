@@ -15,7 +15,6 @@ type PackageJsonData = {
 export type ScanOptions = {
   strict?: boolean;
   dryRun?: boolean;
-  githubToken?: string;
 };
 
 export type ScanResult = {
@@ -406,7 +405,7 @@ export async function scanRepositoryContext(rootDir: string, options: ScanOption
     await upsertScanBlock(paths.decisionsPath, "Decisions", decisionBlock);
   }
 
-  const sync = isDryRun ? null : await syncContext(rootDir, { strict: options.strict, githubToken: options.githubToken });
+  const sync = isDryRun ? null : await syncContext(rootDir, { strict: options.strict });
 
   const updatedFiles = [
     paths.memoryPath,

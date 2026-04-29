@@ -22,6 +22,14 @@ npm run build
 node dist/cli.js help
 ```
 
+After installing the package globally or linking it locally, prefer the compact binary:
+
+```bash
+ace help
+```
+
+Use `npx awesome-context-engine` for package-name bootstrap, then `ace` for normal CLI usage.
+
 ## Contribution Guidelines
 
 - Keep changes focused and minimal.

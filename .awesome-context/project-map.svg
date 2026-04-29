@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1600" height="2400" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px;">
+  <defs>
+    <style type="text/css">
+      .header-title { font-size: 28px; font-weight: 700; fill: #0366d6; }
+      .section-title { font-size: 16px; font-weight: 600; fill: #0366d6; margin-top: 12px; }
+      .text-normal { fill: #24292e; font-size: 13px; }
+      .text-secondary { fill: #6a737d; font-size: 13px; }
+      .text-small { fill: #6a737d; font-size: 12px; }
+      .tree-item { font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; fill: #24292e; }
+      .rect-border { fill: none; stroke: #d1d5da; stroke-width: 1; }
+      .rect-bg { fill: #f6f8fa; stroke: #d1d5da; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1600" height="2400" fill="white"/>
+
+  <!-- Header -->
+  <rect x="40" y="40" width="1520" height="80" rx="8" class="rect-bg"/>
+  <text x="60" y="85" class="header-title">Repository Map</text>
+  <text x="60" y="105" class="text-secondary">awesome-context-engine • 59 files • 18 directories</text>
+
+  <!-- Left Column: Directory Tree -->
+  <g>
+    <text x="60" y="165" class="section-title">📁 Directory Structure</text>
+  <text x="80" y="190" class="tree-item">📁 .</text>
+  <text x="95" y="210" class="tree-item">📁 .continue</text>
+  <text x="110" y="230" class="tree-item">📄 context.md</text>
+  <text x="95" y="250" class="tree-item">📁 .github</text>
+  <text x="110" y="270" class="tree-item">📁 workflows</text>
+  <text x="125" y="290" class="tree-item">📄 deploy-pages.yml</text>
+  <text x="110" y="310" class="tree-item">📄 copilot-instructions.md</text>
+  <text x="95" y="330" class="tree-item">📁 .tmp-fresh</text>
+  <text x="110" y="350" class="tree-item">📁 .continue</text>
+  <text x="125" y="370" class="tree-item">📄 context.md</text>
+  <text x="110" y="390" class="tree-item">📁 .github</text>
+  <text x="125" y="410" class="tree-item">📄 copilot-instructions.md</text>
+  <text x="110" y="430" class="tree-item">📄 .clinerules</text>
+  <text x="110" y="450" class="tree-item">📄 AGENTS.md</text>
+  <text x="110" y="470" class="tree-item">📄 CLAUDE.md</text>
+  <text x="95" y="490" class="tree-item">📁 .tmp-fresh2</text>
+  <text x="110" y="510" class="tree-item">📁 .continue</text>
+  <text x="125" y="530" class="tree-item">📄 context.md</text>
+  <text x="110" y="550" class="tree-item">📁 .github</text>
+  <text x="125" y="570" class="tree-item">📄 copilot-instructions.md</text>
+  <text x="110" y="590" class="tree-item">📁 .vscode</text>
+  <text x="125" y="610" class="tree-item">📄 tasks.json</text>
+  <text x="110" y="630" class="tree-item">📄 .clinerules</text>
+  <text x="110" y="650" class="tree-item">📄 AGENTS.md</text>
+  <text x="110" y="670" class="tree-item">📄 CLAUDE.md</text>
+  <text x="95" y="690" class="tree-item">📁 .vscode</text>
+  <text x="110" y="710" class="tree-item">📄 tasks.json</text>
+  <text x="95" y="730" class="tree-item">📁 assets</text>
+  <text x="110" y="750" class="tree-item">📄 .gitkeep</text>
+  <text x="110" y="770" class="tree-item">📄 ai-tools.png</text>
+  <text x="110" y="790" class="tree-item">📄 auto-mode.png</text>
+  <text x="110" y="810" class="tree-item">📄 banner.png</text>
+  <text x="110" y="830" class="tree-item">📄 context-files.png</text>
+  <text x="110" y="850" class="tree-item">📄 how-it-works.png</text>
+  <text x="110" y="870" class="tree-item">📄 token-optimization.png</text>
+  <text x="95" y="890" class="tree-item">📁 docs</text>
+  <text x="110" y="910" class="tree-item">📄 index.html</text>
+  <text x="95" y="930" class="tree-item">📁 scripts</text>
+  <text x="110" y="950" class="tree-item">📄 release.mjs</text>
+  <text x="95" y="970" class="tree-item">📁 src</text>
+  <text x="110" y="990" class="tree-item">📄 awesomeskill.ts</text>
+  <text x="110" y="1010" class="tree-item">📄 benchmark.ts</text>
+  <text x="110" y="1030" class="tree-item">📄 cli.ts</text>
+  <text x="110" y="1050" class="tree-item">📄 doctor.ts</text>
+  <text x="110" y="1070" class="tree-item">📄 graph.ts</text>
+  <text x="110" y="1090" class="tree-item">📄 index.ts</text>
+  <text x="110" y="1110" class="tree-item">📄 indexer.ts</text>
+  <text x="110" y="1130" class="tree-item">📄 init.ts</text>
+  <text x="110" y="1150" class="tree-item">📄 memory.ts</text>
+  <text x="110" y="1170" class="tree-item">📄 postinstall.ts</text>
+  <text x="110" y="1190" class="tree-item">📄 redact.ts</text>
+  <text x="110" y="1210" class="tree-item">📄 scan.ts</text>
+  <text x="110" y="1230" class="tree-item">📄 skills.ts</text>
+  <text x="110" y="1250" class="tree-item">📄 strict-mode.ts</text>
+  <text x="110" y="1270" class="tree-item">📄 sync.ts</text>
+  <text x="110" y="1290" class="tree-item">📄 templates.ts</text>
+  <text x="110" y="1310" class="tree-item">📄 ui.ts</text>
+  <text x="110" y="1330" class="tree-item">📄 visualize.ts</text>
+  <text x="110" y="1350" class="tree-item">📄 vscode-task.ts</text>
+  <text x="110" y="1370" class="tree-item">📄 vscodeTask.ts</text>
+  <text x="110" y="1390" class="tree-item">📄 watcher.ts</text>
+  <text x="95" y="1410" class="tree-item">📁 test</text>
+  <text x="110" y="1430" class="tree-item">📄 memory.test.mjs</text>
+  <text x="95" y="1450" class="tree-item">📄 .clinerules</text>
+  <text x="95" y="1470" class="tree-item">📄 .env</text>
+  <text x="95" y="1490" class="tree-item">📄 .gitattributes</text>
+  <text x="95" y="1510" class="tree-item">📄 .gitignore</text>
+  <text x="95" y="1530" class="tree-item">📄 .npmignore</text>
+  <text x="95" y="1550" class="tree-item">📄 AGENTS.md</text>
+  <text x="95" y="1570" class="tree-item">📄 CLAUDE.md</text>
+  <text x="95" y="1590" class="tree-item">📄 CONTRIBUTING.md</text>
+  <text x="95" y="1610" class="tree-item">📄 LICENSE</text>
+  <text x="95" y="1630" class="tree-item">📄 package-lock.json</text>
+  <text x="95" y="1650" class="tree-item">📄 package.json</text>
+  <text x="95" y="1670" class="tree-item">📄 README.md</text>
+  <text x="95" y="1690" class="tree-item">📄 tsconfig.json</text>
+
+    <text x="840" y="165" class="section-title">📦 Packages &amp; Entrypoints</text>
+  <text x="840" y="190" class="tree-item">package.json</text>
+  <text x="1000" y="190" class="text-small">.</text>
+  <text x="840" y="210" class="tree-item">tsconfig.json</text>
+  <text x="1000" y="210" class="text-small">.</text>
+
+    <text x="60" y="1750" class="section-title">🔧 Tech Stack</text>
+  <text x="60" y="1775" class="text-normal">.ts</text>
+  <text x="190" y="1775" class="text-secondary">21 files</text>
+  <text x="60" y="1795" class="text-normal">.md</text>
+  <text x="190" y="1795" class="text-secondary">14 files</text>
+  <text x="60" y="1815" class="text-normal">No Extension</text>
+  <text x="190" y="1815" class="text-secondary">9 files</text>
+  <text x="60" y="1835" class="text-normal">.png</text>
+  <text x="190" y="1835" class="text-secondary">6 files</text>
+  <text x="60" y="1855" class="text-normal">.json</text>
+  <text x="190" y="1855" class="text-secondary">5 files</text>
+  <text x="60" y="1875" class="text-normal">.mjs</text>
+  <text x="190" y="1875" class="text-secondary">2 files</text>
+  <text x="60" y="1895" class="text-normal">.yml</text>
+  <text x="190" y="1895" class="text-secondary">1 files</text>
+  <text x="60" y="1915" class="text-normal">.html</text>
+  <text x="190" y="1915" class="text-secondary">1 files</text>
+
+    <text x="840" y="270" class="section-title">📊 Statistics</text>
+  <text x="840" y="295" class="text-normal">Total Files</text>
+  <text x="1100" y="295" class="text-secondary">59</text>
+  <text x="840" y="315" class="text-normal">Total Directories</text>
+  <text x="1100" y="315" class="text-secondary">18</text>
+  <text x="840" y="335" class="text-normal">Total Size</text>
+  <text x="1100" y="335" class="text-secondary">7.24 MB</text>
+  <text x="840" y="355" class="text-normal">Generated</text>
+  <text x="1100" y="355" class="text-secondary">4/28/2026</text>
+
+</g>
+
+  <!-- Footer -->
+  <text x="60" y="2380" class="text-small">Generated by awesome-context-engine • 2026-04-29</text>
+</svg>

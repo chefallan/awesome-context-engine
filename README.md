@@ -18,18 +18,18 @@ awesome-context-engine keeps repository context current for AI coding tools by c
 - [Install](#install)
 - [Platform Compatibility](#platform-compatibility)
 - [Quick Commands](#quick-commands)
-- [Special Commands](#special-commands)
 - [Example: Repository Baseline Scan](#example-repository-baseline-scan)
 - [What It Solves](#what-it-solves)
 - [Features](#features)
 - [Commands](#commands)
+- [Persistent Memory](#persistent-memory)
+- [Memory Config](#memory-config)
+- [Library API](#library-api)
 - [Flags](#flags)
 - [How It Works](#how-it-works)
 - [.awesome-context Structure](#awesome-context-structure)
 - [Auto Mode](#auto-mode)
 - [Example: CI Health Check](#example-ci-health-check)
-- [Example: Clean Commit Message Generation](#example-clean-commit-message-generation)
-- [Example: End Of Day (EOD) Report](#example-end-of-day-eod-report)
 - [Example: Strict Security Mode](#example-strict-security-mode)
 - [Example: A/B Token Savings Measurement](#example-ab-token-savings-measurement)
 - [Interpreting Results](#interpreting-results)
@@ -52,6 +52,9 @@ npx awesome-context-engine
 
 First run is interactive and explicit. The CLI asks before writing files.
 
+After install, the compact command is `ace`.
+The legacy command `awesome-context-engine` still works.
+
 ## Platform Compatibility
 
 awesome-context-engine is designed to run on:
@@ -65,35 +68,24 @@ Compatibility notes:
 - Requires Node.js 18 or later
 - Uses Node APIs and npm scripts that work across major operating systems
 - Auto mode falls back gracefully when recursive file watching is not available on a platform
-- VS Code auto-task integration uses `npx --yes awesome-context-engine@latest auto` so a fresh machine can self-bootstrap without a prior install
 
 ## Quick Commands
 
 ```bash
-npx awesome-context-engine init
-npx awesome-context-engine scan
-npx awesome-context-engine index
-npx awesome-context-engine sync
-npx awesome-context-engine auto
-npx awesome-context-engine doctor
-npx awesome-context-engine benchmark
+ace init
+ace scan
+ace index
+ace sync
+ace auto
+ace doctor
+ace benchmark
+ace memory add --type preference --text "Use clear markdown docs"
+ace memory list
+ace memory search --query "markdown docs"
+ace memory prune
+ace memory summarize
+ace memory forget --id mem_123
 ```
-
-## Special Commands
-
-> [!IMPORTANT]
-> **Special Feature Commands**
-> Use these when you need communication-ready outputs from repository history for changelogs, and end-of-day reporting.
-
-```bash
-npx awesome-context-engine commit-msg
-npx awesome-context-engine commit-msg --breaking
-npx awesome-context-engine eod-report 2026-04-24
-npx awesome-context-engine eod-report 2026-04-24 --json --compact
-```
-
-- `commit-msg`: Suggests Clean Commit title/body from current repository changes.
-- `eod-report <date>`: Generates an End Of Day report with executive summary, delivery stats, and detailed outcomes.
 
 ## What It Solves
 
@@ -110,7 +102,7 @@ awesome-context-engine solves this by:
 ## Features
 
 - Persistent repository memory under `.awesome-context`
-- Automatic context updates with `auto` mode and optional VS Code startup task
+- Automatic context updates with optional `auto` mode
 - Repository baseline scanning with `scan` for existing codebases
 - Token optimization via deduped, prioritized, minimal context generation
 - Safe integration files for Copilot, Claude, Cline, Continue, Cursor, and Codex
@@ -121,26 +113,147 @@ awesome-context-engine solves this by:
 
 | Command | Purpose |
 | --- | --- |
-| `awesome-context-engine init` | Initialize context files and AI integration files |
-| `awesome-context-engine scan` | Scan existing repository and baseline memory/workflows/decisions/preferences |
-| `awesome-context-engine index` | Update `.awesome-context/project-map.md` |
-| `awesome-context-engine sync` | Regenerate `.awesome-context/ai-context.md` |
-| `awesome-context-engine auto` | Start watcher mode (index -> sync on change) |
-| `awesome-context-engine doctor` | Validate setup health |
-| `awesome-context-engine benchmark` | Estimate token savings from compact context |
-| `awesome-context-engine help` | Show command help |
+| `ace init` | Initialize context files and AI integration files |
+| `ace scan` | Scan existing repository and baseline memory/workflows/decisions/preferences |
+| `ace index` | Update `.awesome-context/project-map.md` |
+| `ace sync` | Regenerate `.awesome-context/ai-context.md` |
+| `ace auto` | Start watcher mode (index -> sync on change) |
+| `ace doctor` | Validate setup health |
+| `ace benchmark` | Estimate token savings from compact context |
+| `ace memory add` | Add a persistent memory item |
+| `ace memory list` | List persistent memory items |
+| `ace memory search` | Search and rank relevant memory |
+| `ace memory prune` | Remove duplicates, expired, and low-value memory |
+| `ace memory summarize` | Compress older memory into durable summaries |
+| `ace memory forget` | Remove memory by id or query |
+| `ace help` | Show command help |
+
+## Persistent Memory
+
+`Persistent Memory` extends the existing `.awesome-context` workflow and does not replace it.
+
+- local project storage only
+- relevance-based retrieval for current tasks
+- dedupe and token-budgeted memory injection
+- optional summary-first injection to reduce history noise
+- secret redaction before write
+
+### Memory Commands
+
+```bash
+ace memory add --type preference --text "Use markdown tables for API docs"
+ace memory list
+ace memory search --query "API documentation"
+ace memory prune
+ace memory summarize
+ace memory forget --id mem_123
+```
+
+### Memory Types
+
+- `rule`
+- `preference`
+- `decision`
+- `project_state`
+- `fact`
+- `warning`
+- `style`
+- `note`
+
+### Storage Layout
+
+```text
+.awesome-context/
+  memory/
+    items.json
+    summaries.json
+    index.json
+```
+
+### Memory Item Schema
+
+```json
+{
+  "id": "mem_...",
+  "type": "rule | preference | decision | project_state | fact | warning | style | note",
+  "text": "...",
+  "source": "manual | scan | chat | doc | command | import",
+  "tags": ["docs", "api"],
+  "importance": 1,
+  "createdAt": "...",
+  "updatedAt": "...",
+  "lastUsedAt": null,
+  "useCount": 0,
+  "expiresAt": null
+}
+```
+
+## Memory Config
+
+Memory config is loaded from `.awesome-context/config.json`.
+
+```json
+{
+  "memory": {
+    "enabled": true,
+    "maxItems": 8,
+    "maxTokens": 1200,
+    "includeTypes": ["rule", "preference", "decision", "project_state", "fact", "warning", "style"],
+    "excludeTypes": [],
+    "strictRedaction": true
+  }
+}
+```
+
+`sync` now optionally injects relevant memory sections:
+
+- `## Persistent Memory`
+- `## Memory Decisions`
+- `## Current Project State`
+- `## Excluded Memory`
+
+## Library API
+
+```ts
+import {
+  addMemory,
+  listMemory,
+  searchMemory,
+  forgetMemory,
+  pruneMemory,
+  summarizeMemory,
+  buildMemoryContext
+} from "awesome-context-engine";
+```
+
+Example:
+
+```ts
+await addMemory(process.cwd(), {
+  type: "preference",
+  text: "Use markdown tables for API docs",
+  tags: ["docs", "api"],
+  source: "manual"
+});
+
+const relevant = await searchMemory(process.cwd(), { query: "API docs" });
+```
+
+### Migration Safety
+
+- Existing `.awesome-context/*.md` files are preserved.
+- New memory files are created only when missing.
+- Existing commands and workflows remain backward compatible.
 
 ## Flags
 
 | Flag | Purpose |
 | --- | --- |
 | `--yes`, `-y` | Skip prompts and use defaults |
-| `--no-vscode-task` | Do not create/update VS Code auto task |
 | `--verbose` | Show detailed output |
 | `--json` | Output `doctor` results as JSON |
 | `--compact` | Emit compact single-line JSON (with `--json`) |
 | `--strict` | Fail sync when secret-like content is detected before redaction |
-| `--breaking` | Add Clean Commit `!` marker for `commit-msg` when type supports breaking changes |
 | `--dry-run` | Preview `scan` baseline results without writing files |
 
 ## How It Works
@@ -164,10 +277,15 @@ awesome-context-engine solves this by:
   graph.json
   project-map.md
   project-index.json
+  config.json
   memory.md
   workflows.md
   decisions.md
   preferences.md
+  memory/
+    items.json
+    summaries.json
+    index.json
   skills/
 ```
 
@@ -178,48 +296,29 @@ awesome-context-engine solves this by:
 Run auto mode directly:
 
 ```bash
-npx awesome-context-engine auto
+ace auto
 ```
-
-During `init`, the project can also install a VS Code task (`runOn: folderOpen`) so context refresh starts automatically when the workspace opens.
-
-That task uses `npx --yes awesome-context-engine@latest auto`, so on a new device it can download the CLI on first run instead of depending on a preinstalled package.
 
 `init` now also runs an automatic baseline scan, so existing repositories immediately get starter context in
 `.awesome-context/memory.md`, `.awesome-context/workflows.md`, `.awesome-context/decisions.md`, and `.awesome-context/preferences.md`.
 
 When `auto` is running, it performs an initial `index + sync`, then re-runs on repository changes and editable context files (`memory.md`, `preferences.md`, `decisions.md`, `workflows.md`).
 
-After this task is installed, you do not need to manually run `auto` every time you reopen VS Code.
-One-time setup: allow automatic tasks in this workspace via **Tasks: Manage Automatic Tasks in Folder** and set to **Allow Automatic Tasks**.
-
 ## Example: CI Health Check
 
 ```bash
-npx awesome-context-engine doctor --json --compact
+ace doctor --json --compact
 ```
 
 ## Example: Repository Baseline Scan
 
 ```bash
-npx awesome-context-engine scan
-npx awesome-context-engine scan --dry-run --verbose
+ace scan
+ace scan --dry-run --verbose
 ```
 
 Use this for existing repositories to automatically capture what the repo is about and generate baseline context files before daily `auto` updates.
 Use `--dry-run` to preview what would be updated without changing any files.
-
-## Example: Clean Commit Message Generation
-
-```bash
-npx awesome-context-engine commit-msg
-npx awesome-context-engine commit-msg --breaking
-```
-
-`commit-msg` now summarizes the current workspace delta first: on normal repositories it compares local changes against `HEAD`, and on brand-new repositories with no commits it treats the current files as the initial snapshot. If the workspace is clean, it falls back automatically to the latest meaningful commit so it can still suggest a concrete title and description.
-
-Use `--breaking` only when the change introduces an incompatible behavior or API change for users.
-The marker `!` is applied only for supported Clean Commit types: `new`, `update`, `remove`, and `security`.
 
 ## Example: Interactive Release Flow
 
@@ -231,21 +330,12 @@ npm run release -- major
 ```
 
 The release flow is a repo-only script (`package.json`), not a public CLI command. It asks whether the bump should be `patch`, `minor`, or `major` when no bump argument is provided, then performs the full sequence automatically:
-publish to public npm, update the installed package, commit with the generated `commit-msg` title/body, and push to GitHub.
-
-## Example: End Of Day (EOD) Report
-
-```bash
-npx awesome-context-engine eod-report 2026-04-24
-npx awesome-context-engine eod-report 2026-04-24 --json --compact
-```
-
-By default, `eod-report` returns a bullet-list summary of commits for that date.
+publish to public npm, update installed versions, create a release commit, and push to GitHub.
 
 ## Example: Strict Security Mode
 
 ```bash
-npx awesome-context-engine sync --strict
+ace sync --strict
 ```
 
 If strict mode detects secret-like content before redaction, the command exits with code `2`.
@@ -256,14 +346,14 @@ Use this in CI to distinguish policy failures from generic runtime errors.
 Run the benchmark after syncing context:
 
 ```bash
-npx awesome-context-engine sync
-npx awesome-context-engine benchmark
+ace sync
+ace benchmark
 ```
 
 JSON output for CI dashboards:
 
 ```bash
-npx awesome-context-engine benchmark --json --compact
+ace benchmark --json --compact
 ```
 
 NPM script shortcuts:
@@ -296,7 +386,7 @@ How estimates are calculated:
 
 ### Latest Measured Result (This Repository)
 
-From `npx awesome-context-engine benchmark --json --compact`:
+From `ace benchmark --json --compact`:
 
 - Baseline estimated tokens: `852`
 - Optimized estimated tokens: `477`
@@ -320,7 +410,6 @@ The sync pipeline improves context quality per token by combining:
 
 ![AI Tools](https://raw.githubusercontent.com/chefallan/awesome-context-engine/main/assets/ai-tools.png)
 
-- GitHub Copilot
 - Claude
 - Cline
 - Continue

@@ -160,27 +160,6 @@ async function waitForPublished(rootDir, packageName, version, npmBin) {
   );
 }
 
-function parseCommitSuggestion(stdout) {
-  const stripAnsi = (value) => value.replace(/\u001b\[[0-9;]*m/g, "");
-  const lines = stdout.split(/\r?\n/).map((line) => stripAnsi(line));
-  const titleLine = lines.find((line) => line.startsWith("Title:"));
-  if (!titleLine) {
-    throw new Error("Unable to parse commit title from commit-msg output.");
-  }
-
-  const title = titleLine.replace(/^Title:\s*/, "").trim();
-  const description = lines
-    .filter((line) => line.trim().startsWith("- "))
-    .map((line) => line.trim().replace(/^-\s+/, "").trim())
-    .filter(Boolean);
-
-  if (description.length === 0) {
-    throw new Error("Unable to parse commit description from commit-msg output.");
-  }
-
-  return { title, description };
-}
-
 async function main() {
   const rootDir = process.cwd();
   const args = process.argv.slice(2);
@@ -261,18 +240,20 @@ async function main() {
     throw new Error("Release script requires a named branch (detached HEAD is not supported).");
   }
 
-  const commitSuggestion = await run("node", ["dist/cli.js", "commit-msg"], rootDir);
-  const commit = parseCommitSuggestion(commitSuggestion);
-
   await run("git", ["add", "-A"], rootDir);
 
-  const commitBody = commit.description.map((line) => `- ${line}`).join("\n");
-  await run("git", ["commit", "-m", commit.title, "-m", commitBody], rootDir);
+  const releaseTitle = `release: publish ${pkgAfter.version}`;
+  const releaseBody = [
+    `Publish ${pkgAfter.name}@${pkgAfter.version} to npm.`,
+    `Update global install and project dependency to ${pkgAfter.version}.`
+  ].join("\n");
+
+  await run("git", ["commit", "-m", releaseTitle, "-m", releaseBody], rootDir);
   await run("git", ["push", "origin", branch], rootDir);
 
   console.log(`Published ${pkgAfter.name}@${pkgAfter.version}`);
   console.log(`Pushed commit to ${branch}`);
-  console.log(`Commit title: ${commit.title}`);
+  console.log(`Commit title: ${releaseTitle}`);
 }
 
 main().catch((err) => {

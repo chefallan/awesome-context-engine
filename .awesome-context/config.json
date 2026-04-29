@@ -1,0 +1,10 @@
+{
+  "memory": {
+    "enabled": true,
+    "maxItems": 8,
+    "maxTokens": 1200,
+    "includeTypes": ["rule", "preference", "decision", "project_state", "fact", "warning", "style"],
+    "excludeTypes": [],
+    "strictRedaction": true
+  }
+}

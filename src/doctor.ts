@@ -1,7 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { getContextPaths } from "./templates.js";
-import { hasVscodeAutoTask } from "./vscodeTask.js";
 
 export type DoctorCheck = {
   label: string;
@@ -15,6 +14,7 @@ export type DoctorResult = {
 };
 
 const REQUIRED_MEMORY_FILES = ["memory.md", "project-map.md", "workflows.md", "decisions.md", "preferences.md"];
+const REQUIRED_PERSISTENT_MEMORY_FILES = ["items.json", "summaries.json", "index.json"];
 
 async function existsAsFile(filePath: string): Promise<boolean> {
   try {
@@ -111,11 +111,20 @@ export async function runDoctor(rootDir: string): Promise<DoctorResult> {
     detail: hasAiContext ? "Found" : "Missing .awesome-context/ai-context.md"
   });
 
-  const hasTask = await hasVscodeAutoTask(rootDir);
+  const missingPersistentMemoryFiles: string[] = [];
+  for (const fileName of REQUIRED_PERSISTENT_MEMORY_FILES) {
+    const present = await existsAsFile(path.join(paths.memoryDir, fileName));
+    if (!present) {
+      missingPersistentMemoryFiles.push(fileName);
+    }
+  }
   checks.push({
-    label: "VS Code auto task exists",
-    ok: hasTask,
-    detail: hasTask ? "Found awesome-context auto task." : "Task missing in .vscode/tasks.json"
+    label: "persistent memory store exists",
+    ok: missingPersistentMemoryFiles.length === 0,
+    detail:
+      missingPersistentMemoryFiles.length === 0
+        ? "All memory/*.json files present."
+        : `Missing: ${missingPersistentMemoryFiles.join(", ")}`
   });
 
   const autoMode = await canRunAutoMode(rootDir);

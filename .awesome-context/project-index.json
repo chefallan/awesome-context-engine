@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-04-27T16:08:15.033Z",
+  "generatedAt": "2026-04-29T02:08:04.868Z",
   "rootDir": "D:\\Github\\awesome-context-engine",
-  "totalFiles": 75,
-  "totalDirectories": 38,
+  "totalFiles": 59,
+  "totalDirectories": 18,
   "byExtension": {
     "[no-ext]": 9,
-    ".md": 17,
+    ".md": 14,
     ".yml": 1,
-    ".json": 13,
+    ".json": 5,
     ".png": 6,
     ".html": 1,
     ".mjs": 2,
-    ".ts": 26
+    ".ts": 21
   },
   "files": [
     {
@@ -21,8 +21,8 @@
     },
     {
       "path": ".continue/context.md",
-      "bytes": 427,
-      "mtimeMs": 1777069602831.364
+      "bytes": 1005,
+      "mtimeMs": 1777422122395.5889
     },
     {
       "path": ".env",
@@ -36,8 +36,8 @@
     },
     {
       "path": ".github/copilot-instructions.md",
-      "bytes": 425,
-      "mtimeMs": 1777069602829.3171
+      "bytes": 1002,
+      "mtimeMs": 1777422122391.5725
     },
     {
       "path": ".github/workflows/deploy-pages.yml",
@@ -111,13 +111,13 @@
     },
     {
       "path": ".vscode/tasks.json",
-      "bytes": 432,
-      "mtimeMs": 1777249671014.9478
+      "bytes": 44,
+      "mtimeMs": 1777423548308.4016
     },
     {
       "path": "AGENTS.md",
-      "bytes": 416,
-      "mtimeMs": 1777069602832.4546
+      "bytes": 994,
+      "mtimeMs": 1777422122393.5564
     },
     {
       "path": "assets/.gitkeep",
@@ -156,18 +156,18 @@
     },
     {
       "path": "CLAUDE.md",
-      "bytes": 425,
-      "mtimeMs": 1777069602831.364
+      "bytes": 1003,
+      "mtimeMs": 1777422122394.5557
     },
     {
       "path": "CONTRIBUTING.md",
-      "bytes": 1419,
-      "mtimeMs": 1777076065160.16
+      "bytes": 1633,
+      "mtimeMs": 1777423548308.4016
     },
     {
       "path": "docs/index.html",
-      "bytes": 16719,
-      "mtimeMs": 1777105613260.0674
+      "bytes": 14577,
+      "mtimeMs": 1777424695190.1057
     },
     {
       "path": "LICENSE",
@@ -177,22 +177,22 @@
     {
       "path": "package-lock.json",
       "bytes": 25060,
-      "mtimeMs": 1777306092013.1653
+      "mtimeMs": 1777420560302.7708
     },
     {
       "path": "package.json",
-      "bytes": 1319,
-      "mtimeMs": 1777306091989.0674
+      "bytes": 1495,
+      "mtimeMs": 1777424661611.6711
     },
     {
       "path": "README.md",
-      "bytes": 13698,
-      "mtimeMs": 1777249671020.9475
+      "bytes": 13674,
+      "mtimeMs": 1777424658813.0994
     },
     {
       "path": "scripts/release.mjs",
-      "bytes": 8986,
-      "mtimeMs": 1777249671041.918
+      "bytes": 8249,
+      "mtimeMs": 1777424633034.5286
     },
     {
       "path": "src/awesomeskill.ts",
@@ -202,32 +202,17 @@
     {
       "path": "src/benchmark.ts",
       "bytes": 3170,
-      "mtimeMs": 1777077149902.5059
+      "mtimeMs": 1777419984417.4846
     },
     {
       "path": "src/cli.ts",
-      "bytes": 25006,
-      "mtimeMs": 1777300003823.733
-    },
-    {
-      "path": "src/commit-message.ts",
-      "bytes": 37356,
-      "mtimeMs": 1777253532444.4456
+      "bytes": 24397,
+      "mtimeMs": 1777428130458.0442
     },
     {
       "path": "src/doctor.ts",
-      "bytes": 3895,
-      "mtimeMs": 1777073574555.505
-    },
-    {
-      "path": "src/eod-report.ts",
-      "bytes": 15632,
-      "mtimeMs": 1777257867848.1892
-    },
-    {
-      "path": "src/github-copilot.ts",
-      "bytes": 6933,
-      "mtimeMs": 1777305016250.6387
+      "bytes": 4274,
+      "mtimeMs": 1777423548111.0203
     },
     {
       "path": "src/graph.ts",
@@ -235,19 +220,29 @@
       "mtimeMs": 1777076547367.3135
     },
     {
+      "path": "src/index.ts",
+      "bytes": 526,
+      "mtimeMs": 1777428145781.6133
+    },
+    {
       "path": "src/indexer.ts",
-      "bytes": 15214,
-      "mtimeMs": 1777298789287.7144
+      "bytes": 24676,
+      "mtimeMs": 1777424385713.98
     },
     {
       "path": "src/init.ts",
-      "bytes": 8238,
-      "mtimeMs": 1777075484739.628
+      "bytes": 10839,
+      "mtimeMs": 1777423548111.0203
+    },
+    {
+      "path": "src/memory.ts",
+      "bytes": 21148,
+      "mtimeMs": 1777423548111.0203
     },
     {
       "path": "src/postinstall.ts",
-      "bytes": 2512,
-      "mtimeMs": 1777298378102.2598
+      "bytes": 2410,
+      "mtimeMs": 1777424626824.6416
     },
     {
       "path": "src/redact.ts",
@@ -256,13 +251,13 @@
     },
     {
       "path": "src/scan.ts",
-      "bytes": 13730,
-      "mtimeMs": 1777299483929.7073
+      "bytes": 13671,
+      "mtimeMs": 1777424617546.9902
     },
     {
       "path": "src/skills.ts",
-      "bytes": 41610,
-      "mtimeMs": 1777305002053.8662
+      "bytes": 41341,
+      "mtimeMs": 1777424624375.6025
     },
     {
       "path": "src/strict-mode.ts",
@@ -271,13 +266,13 @@
     },
     {
       "path": "src/sync.ts",
-      "bytes": 8154,
-      "mtimeMs": 1777299993083.5405
+      "bytes": 9155,
+      "mtimeMs": 1777424614900.2405
     },
     {
       "path": "src/templates.ts",
-      "bytes": 1410,
-      "mtimeMs": 1777071226727.933
+      "bytes": 1850,
+      "mtimeMs": 1777423548111.0203
     },
     {
       "path": "src/ui.ts",
@@ -285,9 +280,14 @@
       "mtimeMs": 1777102117666.9268
     },
     {
+      "path": "src/visualize.ts",
+      "bytes": 8976,
+      "mtimeMs": 1777428473698.1138
+    },
+    {
       "path": "src/vscode-task.ts",
       "bytes": 3961,
-      "mtimeMs": 1777249671083.3577
+      "mtimeMs": 1777419984503.9958
     },
     {
       "path": "src/vscodeTask.ts",
@@ -296,93 +296,13 @@
     },
     {
       "path": "src/watcher.ts",
-      "bytes": 5107,
-      "mtimeMs": 1777083875960.6997
+      "bytes": 5281,
+      "mtimeMs": 1777423548172.6323
     },
     {
-      "path": "test/commit-msg.test.mjs",
-      "bytes": 3897,
-      "mtimeMs": 1777249671089.3577
-    },
-    {
-      "path": "test/fixtures/commit-msg/clean-fallback-last-commit/base/README.md",
-      "bytes": 23,
-      "mtimeMs": 1777249671098.172
-    },
-    {
-      "path": "test/fixtures/commit-msg/clean-fallback-last-commit/fixture.json",
-      "bytes": 203,
-      "mtimeMs": 1777249671104.2427
-    },
-    {
-      "path": "test/fixtures/commit-msg/clean-fallback-last-commit/latest/CONTRIBUTING.md",
-      "bytes": 48,
-      "mtimeMs": 1777249671112.4727
-    },
-    {
-      "path": "test/fixtures/commit-msg/clean-fallback-last-commit/latest/README.md",
-      "bytes": 51,
-      "mtimeMs": 1777249671120.7847
-    },
-    {
-      "path": "test/fixtures/commit-msg/no-commits-initial/fixture.json",
-      "bytes": 50,
-      "mtimeMs": 1777249671401.9944
-    },
-    {
-      "path": "test/fixtures/commit-msg/no-commits-initial/workspace/package.json",
-      "bytes": 80,
-      "mtimeMs": 1777249671410.9062
-    },
-    {
-      "path": "test/fixtures/commit-msg/no-commits-initial/workspace/src/index.ts",
-      "bytes": 26,
-      "mtimeMs": 1777249671421.4177
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-command-focus/base/src/cli.ts",
-      "bytes": 139,
-      "mtimeMs": 1777249671423.0037
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-command-focus/fixture.json",
-      "bytes": 135,
-      "mtimeMs": 1777249671434.2695
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-command-focus/workspace/src/cli.ts",
-      "bytes": 183,
-      "mtimeMs": 1777249671444.761
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-function-focus/base/src/planner.ts",
-      "bytes": 55,
-      "mtimeMs": 1777249671455.382
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-function-focus/fixture.json",
-      "bytes": 135,
-      "mtimeMs": 1777249671455.382
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-function-focus/workspace/src/planner.ts",
-      "bytes": 121,
-      "mtimeMs": 1777249671456.3818
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-script-focus/base/package.json",
-      "bytes": 103,
-      "mtimeMs": 1777249671457.3826
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-script-focus/fixture.json",
-      "bytes": 135,
-      "mtimeMs": 1777249671458.3835
-    },
-    {
-      "path": "test/fixtures/commit-msg/workspace-script-focus/workspace/package.json",
-      "bytes": 131,
-      "mtimeMs": 1777249671467.7383
+      "path": "test/memory.test.mjs",
+      "bytes": 5095,
+      "mtimeMs": 1777423548308.4016
     },
     {
       "path": "tsconfig.json",
@@ -390,5 +310,26 @@
       "mtimeMs": 1777071713808.1091
     }
   ],
-  "truncated": false
+  "truncated": false,
+  "packageScripts": {
+    "build": "tsc",
+    "dev": "tsc -w -p .",
+    "start": "node dist/cli.js",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "release": "node scripts/release.mjs",
+    "benchmark": "node dist/cli.js benchmark",
+    "benchmark:docs-check": "npm run build && node dist/cli.js benchmark --json --compact",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepublishOnly": "npm run build",
+    "postinstall": "node dist/postinstall.js"
+  },
+  "dependencies": [
+    "@anthropic-ai/sdk",
+    "@inquirer/prompts",
+    "awesome-context-engine",
+    "picocolors",
+    "@types/node",
+    "ts-node",
+    "typescript"
+  ]
 }

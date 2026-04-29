@@ -1,11 +1,35 @@
 # Project Map
 
-Generated at: 2026-04-27T16:08:15.033Z
+Generated at: 2026-04-29T02:05:58.490Z
 
 ## Repository Snapshot
-- Total files: 75
-- Total directories: 38
+- Total files: 59
+- Total directories: 18
 - Truncated scan: no
+
+## Repository Identity
+- Root package: awesome-context-engine
+- Package description: Drop-in persistent context and memory layer for AI coding tools.
+- Workspace packages: 1
+- Direct dependencies indexed: 7
+
+## Browse First
+- Start with README intent: Portable repo memory for AI coding agents.
+- Inspect entrypoint: src/cli.ts
+- Inspect entrypoint: src/index.ts
+- Inspect config: package.json
+- Inspect config: tsconfig.json
+- Browse directory: src/ (21 files)
+- Browse directory: scripts/ (1 files)
+- Browse directory: docs/ (1 files)
+- Build command: root#build
+- Test command: root#test
+
+## Workspace Packages
+- root -> awesome-context-engine: Drop-in persistent context and memory layer for AI coding tools.
+
+## Auxiliary Packages
+- none detected
 
 ## Folder Tree (max depth 3)
 
@@ -54,13 +78,12 @@ Generated at: 2026-04-27T16:08:15.033Z
 │   ├── awesomeskill.ts
 │   ├── benchmark.ts
 │   ├── cli.ts
-│   ├── commit-message.ts
 │   ├── doctor.ts
-│   ├── eod-report.ts
-│   ├── github-copilot.ts
 │   ├── graph.ts
+│   ├── index.ts
 │   ├── indexer.ts
 │   ├── init.ts
+│   ├── memory.ts
 │   ├── postinstall.ts
 │   ├── redact.ts
 │   ├── scan.ts
@@ -69,13 +92,13 @@ Generated at: 2026-04-27T16:08:15.033Z
 │   ├── sync.ts
 │   ├── templates.ts
 │   ├── ui.ts
+│   ├── visualize.ts
 │   ├── vscode-task.ts
 │   ├── vscodeTask.ts
 │   └── watcher.ts
 ├── test/
 │   ├── fixtures/
-│   │   └── commit-msg/
-│   └── commit-msg.test.mjs
+│   └── memory.test.mjs
 ├── .clinerules
 ├── .env
 ├── .gitattributes
@@ -92,9 +115,9 @@ Generated at: 2026-04-27T16:08:15.033Z
 ```
 
 ## Detected Languages
-- TypeScript: 26
-- Markdown: 17
-- JSON: 13
+- TypeScript: 21
+- Markdown: 14
+- JSON: 5
 - JavaScript: 2
 - HTML: 1
 - YAML: 1
@@ -112,28 +135,45 @@ Generated at: 2026-04-27T16:08:15.033Z
 - root#prepublishOnly: npm run build
 - root#release: node scripts/release.mjs
 - root#start: node dist/cli.js
-- root#test: npm run build && node --test test/commit-msg.test.mjs
-- test/fixtures/commit-msg/workspace-script-focus/base#build: tsc
-- test/fixtures/commit-msg/workspace-script-focus/workspace#build: tsc
-- test/fixtures/commit-msg/workspace-script-focus/workspace#test: node --test
+- root#test: npm run build && node --test test/*.test.mjs
 
 ## Important Config Files
 - package.json
 - tsconfig.json
 
 ## Test Commands
-- root#test: npm run build && node --test test/commit-msg.test.mjs
-- test/fixtures/commit-msg/workspace-script-focus/base#build: tsc
-- test/fixtures/commit-msg/workspace-script-focus/workspace#build: tsc
-- test/fixtures/commit-msg/workspace-script-focus/workspace#test: node --test
+- root#test: npm run build && node --test test/*.test.mjs
 
 ## Build Commands
 - root#build: tsc
-- test/fixtures/commit-msg/workspace-script-focus/base#build: tsc
-- test/fixtures/commit-msg/workspace-script-focus/workspace#build: tsc
 
 ## Entrypoints
 - src/cli.ts
-- test/fixtures/commit-msg/no-commits-initial/workspace/src/index.ts
-- test/fixtures/commit-msg/workspace-command-focus/base/src/cli.ts
-- test/fixtures/commit-msg/workspace-command-focus/workspace/src/cli.ts
+- src/index.ts
+
+## Auxiliary Entrypoints
+- none detected
+
+## Key Directories
+- src/: 21 files
+- scripts/: 1 files
+- docs/: 1 files
+- assets/: 7 files
+- .github/: 2 files
+- .clinerules/: 1 files
+- .continue/: 1 files
+- .env/: 1 files
+
+## Auxiliary Paths
+- test/: 1 files
+- .tmp-fresh2/: 6 files
+- .tmp-fresh/: 5 files
+
+## Dependency Highlights
+- @anthropic-ai/sdk
+- @inquirer/prompts
+- @types/node
+- awesome-context-engine
+- picocolors
+- ts-node
+- typescript

@@ -36,9 +36,6 @@ const DESIRED_ENTRIES = [
 const ENV_TEMPLATE = `# awesome-context-engine
 # Anthropic API key — https://console.anthropic.com
 ANTHROPIC_API_KEY=
-
-# Optional: set to 1 to skip the GitHub Copilot login prompt on commit-msg
-# ACE_NO_COPILOT_PROMPT=1
 `;
 
 async function ensureGitignoreEntries(projectRoot: string): Promise<void> {

@@ -321,8 +321,8 @@
       <p class="summary">
         Keep AI coding context fresh without manual prompt wrangling.
         awesome-context-engine initializes repository memory, scans existing repositories to baseline context,
-        indexes your project, syncs compact context files, and generates Clean Commit messages for tools like
-        Copilot, Claude, Cline, Continue, Cursor, and Codex.
+        indexes your project, syncs compact context files, and keeps durable memory for tools like
+        Claude, Cline, Continue, Cursor, and Codex.
       </p>
 
       <div class="feature-grid">
@@ -339,12 +339,8 @@
           Generate compact, high-signal context for AI sessions.
         </div>
         <div class="feature-card">
-          <div class="feature-title">Clean Commit Output</div>
-          Generate commit titles and descriptions using the Clean Commit standard.
-        </div>
-        <div class="feature-card">
-          <div class="feature-title">Breaking Change Marker</div>
-          Use <span class="mono">commit-msg --breaking</span> to apply <span class="mono">!</span> when valid.
+          <div class="feature-title">Memory Commands</div>
+          Add, search, summarize, and prune project memory with dedicated CLI commands.
         </div>
         <div class="feature-card">
           <div class="feature-title">Local-first</div>
@@ -355,8 +351,8 @@
           Preserve existing memory files and merge integration rules safely.
         </div>
         <div class="feature-card">
-          <div class="feature-title">VS Code Startup Task</div>
-          Optional <span class="mono">folderOpen</span> task for automatic syncing on workspace open.
+          <div class="feature-title">Cross-IDE CLI</div>
+          Use the same <span class="mono">ace</span> command flow across editors and terminals.
         </div>
         <div class="feature-card">
           <div class="feature-title">Strict Security Mode</div>
@@ -378,26 +374,14 @@
     </section>
 
     <section class="section special" aria-labelledby="special-commands-title">
-      <h2 id="special-commands-title">Special Commands</h2>
-      <p>Use these advanced commands for communication-ready outputs from your repository history.</p>
+      <h2 id="special-commands-title">Advanced Commands</h2>
+      <p>Use these advanced commands for memory maintenance and validation workflows.</p>
       <ul class="command-list">
-        <li><span class="mono">npx awesome-context-engine commit-msg</span> to generate a Clean Commit-ready title and description.</li>
-        <li><span class="mono">npx awesome-context-engine commit-msg --breaking</span> to mark incompatible changes when valid.</li>
-        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24</span> to produce a date-based leadership summary.</li>
-        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24 --json --compact</span> for dashboards and automation pipelines.</li>
+        <li><span class="mono">ace memory add --type preference --text "Use clear markdown docs"</span> to store reusable memory.</li>
+        <li><span class="mono">ace memory search --query "markdown docs"</span> to retrieve relevant memory by intent.</li>
+        <li><span class="mono">ace memory summarize</span> to condense stale memory into summaries.</li>
+        <li><span class="mono">ace memory prune</span> to remove duplicates and low-value memory.</li>
         <li><span class="mono">npx awesome-context-engine scan --dry-run --verbose</span> to preview baseline context updates with no file writes.</li>
-      </ul>
-    </section>
-
-    <section class="section" aria-labelledby="eod-report-title">
-      <h2 id="eod-report-title">End Of Day (EOD) Reports</h2>
-      <p>
-        Turn your daily commits into a leadership-ready report with executive summary, delivery stats, and detailed
-        plain-English outcomes.
-      </p>
-      <ul class="command-list">
-        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24</span> for readable bullet output.</li>
-        <li><span class="mono">npx awesome-context-engine eod-report 2026-04-24 --json --compact</span> for automation and dashboards.</li>
       </ul>
     </section>
 
@@ -405,11 +389,9 @@
       <h2 id="auto-start-title">Auto-start on Reopen</h2>
       <p>
         During setup, <span class="mono">init</span> performs a baseline repository scan automatically, so context files are ready immediately.
-        
-        After setup installs the VS Code <span class="mono">folderOpen</span> task, you do not need to manually run
-        <span class="mono">auto</span> each time. Reopening the workspace starts the index + sync cycle automatically.
-        One-time action: set this workspace to <strong>Allow Automatic Tasks</strong> from
-        <span class="mono">Tasks: Manage Automatic Tasks in Folder</span>.
+
+        For continuous refresh, run <span class="mono">ace auto</span> in a terminal. For manual control, run
+        <span class="mono">ace sync</span> after prompt results that changed files.
       </p>
     </section>
 
@@ -418,20 +400,9 @@
       <ul class="command-list">
         <li>New: <span class="mono">scan</span> command baselines context for existing repositories before ongoing auto updates.</li>
         <li>New: <span class="mono">scan --dry-run</span> previews baseline context generation without changing repository files.</li>
-        <li>Commit message generation follows the Clean Commit standard with optional <span class="mono">--breaking</span>.</li>
-        <li>EOD report now provides executive summary, delivery stats, and detailed plain-English commit outcomes.</li>
+        <li>New: persistent memory commands support add/search/summarize/prune workflows.</li>
         <li>Auto mode performs <span class="mono">index + sync</span> on startup and re-runs on repository and editable context updates.</li>
       </ul>
-    </section>
-
-    <section class="section" aria-labelledby="commit-standard-title">
-      <h2 id="commit-standard-title">Clean Commit Standard</h2>
-      <p>
-        Commit message generation follows the Clean Commit convention inspired by
-        <a href="https://github.com/wgtechlabs/clean-commit" target="_blank" rel="noreferrer">wgtechlabs/clean-commit</a>.
-        Use <span class="mono">npx awesome-context-engine commit-msg --breaking</span> only for incompatible changes.
-        If the working tree is clean, <span class="mono">commit-msg</span> automatically summarizes the latest meaningful commit.
-      </p>
     </section>
 
     <section class="section" aria-labelledby="compatibility-title">
@@ -442,10 +413,7 @@
     <section class="section" aria-labelledby="credits-title">
       <h2 id="credits-title">Credits</h2>
       <p>
-        Clean Commit standard credit to
-        <a href="https://github.com/wgtechlabs" target="_blank" rel="noreferrer">@wgtechlabs</a>
-        and
-        <a href="https://github.com/warengonzaga" target="_blank" rel="noreferrer">@warengonzaga</a>.
+        Thanks to the open-source maintainers and AI tooling communities that shaped context-first workflows.
       </p>
     </section>
 

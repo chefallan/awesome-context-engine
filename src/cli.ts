@@ -6,32 +6,47 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { runTokenBenchmark } from "./benchmark.js";
-import { generateCommitMessageSuggestion } from "./commit-message.js";
-import { checkGhCopilotReadiness, loginWithGh } from "./github-copilot.js";
+import {
+  addMemory,
+  forgetMemory,
+  listMemory,
+  pruneMemory,
+  searchMemory,
+  summarizeMemory,
+  type MemoryType
+} from "./memory.js";
 import { runDoctor } from "./doctor.js";
-import { generateEodReport } from "./eod-report.js";
 import { initProject, type InitResult } from "./init.js";
 import { indexProject } from "./indexer.js";
 import { scanRepositoryContext } from "./scan.js";
 import { syncContext } from "./sync.js";
+import { generateSvgVisualization } from "./visualize.js";
 import { getExitCodeForError } from "./strict-mode.js";
 import { getContextPaths } from "./templates.js";
 import { confirmPrompt, error, heading, info, secondary, success, warning } from "./ui.js";
-import { ensureVscodeAutoTask } from "./vscodeTask.js";
 import { startAutoMode } from "./watcher.js";
 
 const execFileAsync = promisify(execFile);
 
-type Command = "init" | "index" | "scan" | "sync" | "auto" | "doctor" | "benchmark" | "commit-msg" | "eod-report" | "version" | "help";
+type Command =
+  | "init"
+  | "index"
+  | "scan"
+  | "sync"
+  | "auto"
+  | "doctor"
+  | "benchmark"
+  | "memory"
+  | "visualize"
+  | "version"
+  | "help";
 
 type CliOptions = {
   yes: boolean;
-  noVscodeTask: boolean;
   verbose: boolean;
   json: boolean;
   compact: boolean;
   strict: boolean;
-  breaking: boolean;
   dryRun: boolean;
 };
 
@@ -39,6 +54,7 @@ type ParsedCli = {
   command: Command | null;
   options: CliOptions;
   commandArgs: string[];
+  kvArgs: Record<string, string>;
 };
 
 const CREATE_LIST = [
@@ -53,20 +69,20 @@ const CREATE_LIST = [
 function parseCli(argv: string[]): ParsedCli {
   const options: CliOptions = {
     yes: false,
-    noVscodeTask: false,
     verbose: false,
     json: false,
     compact: false,
     strict: false,
-    breaking: false,
     dryRun: false
   };
 
   let command: Command | null = null;
   const commandArgs: string[] = [];
+  const kvArgs: Record<string, string> = {};
   const args = argv.slice(2);
 
-  for (const rawArg of args) {
+  for (let i = 0; i < args.length; i += 1) {
+    const rawArg = args[i];
     const arg = rawArg.trim();
     if (!arg) {
       continue;
@@ -74,10 +90,6 @@ function parseCli(argv: string[]): ParsedCli {
 
     if (arg === "--yes" || arg === "-y") {
       options.yes = true;
-      continue;
-    }
-    if (arg === "--no-vscode-task") {
-      options.noVscodeTask = true;
       continue;
     }
     if (arg === "--verbose") {
@@ -96,10 +108,6 @@ function parseCli(argv: string[]): ParsedCli {
       options.strict = true;
       continue;
     }
-    if (arg === "--breaking") {
-      options.breaking = true;
-      continue;
-    }
     if (arg === "--dry-run") {
       options.dryRun = true;
       continue;
@@ -109,13 +117,30 @@ function parseCli(argv: string[]): ParsedCli {
       continue;
     }
 
+    if (arg.startsWith("--")) {
+      const [key, inlineValue] = arg.slice(2).split("=", 2);
+      if (inlineValue !== undefined) {
+        kvArgs[key] = inlineValue;
+        continue;
+      }
+
+      const nextArg = args[i + 1];
+      if (nextArg && !nextArg.startsWith("-")) {
+        kvArgs[key] = nextArg;
+        i += 1;
+      } else {
+        kvArgs[key] = "true";
+      }
+      continue;
+    }
+
     if (arg.startsWith("-")) {
       command = "help";
       continue;
     }
 
     if (!command) {
-      if (["init", "index", "scan", "sync", "auto", "doctor", "benchmark", "commit-msg", "eod-report", "version", "help"].includes(arg)) {
+      if (["init", "index", "scan", "sync", "auto", "doctor", "benchmark", "memory", "visualize", "version", "help"].includes(arg)) {
         command = arg as Command;
       } else {
         command = "help";
@@ -126,7 +151,7 @@ function parseCli(argv: string[]): ParsedCli {
     commandArgs.push(arg);
   }
 
-  return { command, options, commandArgs };
+  return { command, options, commandArgs, kvArgs };
 }
 
 function printHelp(): void {
@@ -134,27 +159,39 @@ function printHelp(): void {
   console.log(`
 Portable repo memory for AI coding agents.
 
+Preferred shorthand:
+  ace <command>
+
 Usage:
-  awesome-context-engine            First-run setup or quick sync
-  awesome-context-engine init       Initialize core context files
-  awesome-context-engine index      Update project-map.md only
-  awesome-context-engine scan       Scan repository and baseline context files
-  awesome-context-engine sync       Regenerate ai-context.md only
-  awesome-context-engine auto       Watch mode: index + sync on changes
-  awesome-context-engine doctor     Check setup health
-  awesome-context-engine benchmark  Estimate token savings (raw vs ai-context)
-  awesome-context-engine commit-msg Suggest Clean Commit title/body for EOD reporting
-  awesome-context-engine eod-report <date>  Generate EOD report from commits (YYYY-MM-DD)
-  awesome-context-engine version    Show running/project/global/latest versions
+  ace                               First-run setup or quick sync
+  ace init                          Initialize core context files
+  ace index                         Update project-map.md only
+  ace scan                          Scan repository and baseline context files
+  ace sync                          Regenerate ai-context.md only
+  ace auto                          Watch mode: index + sync on changes
+  ace doctor                        Check setup health
+  ace benchmark                     Estimate token savings (raw vs ai-context)
+  ace memory <subcommand>           Manage persistent memory
+  ace visualize                     Generate project-map.svg visualization
+  ace version                       Show running/project/global/latest versions
+
+Legacy alias:
+  awesome-context-engine <command>
+
+Memory subcommands:
+  ace memory add --type <type> --text <text> [--tags docs,api] [--source manual] [--importance 1-5]
+  ace memory list [--type <type>] [--tag <tag>] [--query <query>] [--limit <n>]
+  ace memory search --query <query> [--max-items <n>] [--max-tokens <n>]
+  ace memory prune
+  ace memory summarize
+  ace memory forget --id <mem_id> | --query <query>
 
 Flags:
   --yes, -y           Skip prompts and use defaults
-  --no-vscode-task    Do not create VS Code auto task
   --verbose           Show detailed logs
   --json              Output doctor results as JSON
   --compact           Output compact JSON (use with --json)
   --strict            Fail sync when secret-like content is detected before redaction
-  --breaking          Add Clean Commit breaking marker (!) for commit-msg when valid
   --dry-run           Preview scan output without writing files
 `);
 }
@@ -178,30 +215,8 @@ function printInitVerbose(result: InitResult): void {
   info(`- init created: ${result.created.length}, skipped: ${result.skipped.length}`);
 }
 
-async function maybeEnableVscodeTask(rootDir: string, options: CliOptions, promptMessage: string): Promise<boolean> {
-  if (options.noVscodeTask) {
-    return false;
-  }
-
-  const enableTask = await confirmPrompt(promptMessage, true, options.yes);
-  if (!enableTask) {
-    return false;
-  }
-
-  await ensureVscodeAutoTask(rootDir);
-  return true;
-}
-
 async function runInitCommand(rootDir: string, options: CliOptions): Promise<void> {
-  const shouldInstallTask = options.noVscodeTask
-    ? false
-    : await confirmPrompt(
-        "Enable automatic syncing when this workspace opens in VS Code?",
-        true,
-        options.yes
-      );
-
-  const initResult = await initProject(rootDir, { installVscodeTask: shouldInstallTask });
+  const initResult = await initProject(rootDir);
   if (options.verbose) {
     printInitVerbose(initResult);
   }
@@ -224,12 +239,7 @@ async function runInitCommand(rootDir: string, options: CliOptions): Promise<voi
     return;
   }
 
-  if (shouldInstallTask) {
-    success("VS Code auto task installed");
-  } else {
-    warning("VS Code auto task skipped");
-  }
-  info("Initialization complete. Run 'awesome-context-engine auto' or reopen VS Code to start automatic syncing.");
+  info("Initialization complete. Run 'awesome-context-engine auto' to start optional watcher syncing.");
 }
 
 async function runFirstTimeExperience(rootDir: string, options: CliOptions): Promise<void> {
@@ -250,7 +260,7 @@ async function runFirstTimeExperience(rootDir: string, options: CliOptions): Pro
   }
 
   try {
-    const initResult = await initProject(rootDir, { installVscodeTask: false });
+    const initResult = await initProject(rootDir);
     if (options.verbose) {
       printInitVerbose(initResult);
     }
@@ -260,9 +270,8 @@ async function runFirstTimeExperience(rootDir: string, options: CliOptions): Pro
     return;
   }
 
-  const githubToken = await resolveGitHubToken();
   try {
-    const scanResult = await scanRepositoryContext(rootDir, { strict: options.strict, githubToken });
+    const scanResult = await scanRepositoryContext(rootDir, { strict: options.strict });
     success("Repository scanned");
     success("AI context synced");
     if (options.verbose) {
@@ -274,22 +283,6 @@ async function runFirstTimeExperience(rootDir: string, options: CliOptions): Pro
   } catch (stepError) {
     printStepError("scan", stepError);
     process.exit(getExitCodeForError(stepError));
-    return;
-  }
-
-  try {
-    const enabledTask = await maybeEnableVscodeTask(
-      rootDir,
-      options,
-      "Enable automatic syncing when this workspace opens in VS Code?"
-    );
-    if (enabledTask) {
-      success("VS Code auto task installed");
-    } else {
-      warning("VS Code auto task skipped");
-    }
-  } catch (stepError) {
-    printStepError("vscode-task", stepError);
     return;
   }
 
@@ -306,10 +299,9 @@ async function runDefault(rootDir: string, options: CliOptions): Promise<void> {
     return;
   }
 
-  const githubToken = await resolveGitHubToken();
   try {
     const indexResult = await indexProject(rootDir);
-    const syncResult = await syncContext(rootDir, { strict: options.strict, githubToken });
+    const syncResult = await syncContext(rootDir, { strict: options.strict });
 
     success("Project indexed and AI context synced");
     if (options.verbose) {
@@ -404,132 +396,127 @@ async function runBenchmarkCommand(rootDir: string, options: CliOptions): Promis
   }
 }
 
-async function resolveGitHubToken(): Promise<string | undefined> {
-  if (process.env.ANTHROPIC_API_KEY) {
-    return undefined;
+function parseMemoryType(type: string): MemoryType {
+  const value = type.trim();
+  const allowed: MemoryType[] = ["rule", "preference", "decision", "project_state", "fact", "warning", "style", "note"];
+  if ((allowed as string[]).includes(value)) {
+    return value as MemoryType;
   }
-
-  const readiness = await checkGhCopilotReadiness();
-
-  if (readiness.state === "ready") {
-    return readiness.token;
-  }
-
-  if (readiness.state === "needs-login") {
-    const want = await confirmPrompt(
-      "Login with GitHub to use Copilot AI for commit messages?",
-      true
-    );
-    if (!want) return undefined;
-    const token = await loginWithGh();
-    return token ?? undefined;
-  }
-
-  return undefined;
+  throw new Error(`Invalid memory type: ${type}`);
 }
 
-async function runCommitMessageCommand(rootDir: string, options: CliOptions): Promise<void> {
-  const githubToken = await resolveGitHubToken();
+async function runMemoryCommand(rootDir: string, options: CliOptions, commandArgs: string[], kvArgs: Record<string, string>): Promise<void> {
+  const sub = commandArgs[0];
 
-  if (githubToken) {
-    secondary("Generating commit message with GitHub Copilot...");
-  } else if (process.env.ANTHROPIC_API_KEY) {
-    secondary("Generating commit message with Claude...");
+  if (!sub) {
+    throw new Error("Missing memory subcommand.");
   }
 
-  const result = await generateCommitMessageSuggestion(rootDir, { breaking: options.breaking, githubToken });
-
-  if (result.aiProvider === "heuristic" && githubToken) {
-    const reasonMsg: Record<string, string> = {
-      "no-subscription": "GitHub Copilot subscription not found — using heuristics instead.",
-      "api-error": "GitHub Copilot API error — using heuristics instead.",
-      "parse-error": "GitHub Copilot returned an unexpected response — using heuristics instead."
-    };
-    warning(reasonMsg[result.copilotFailureReason ?? "api-error"] ?? "Copilot unavailable — using heuristics instead.");
-  }
-
-  if (options.json) {
-    const indent = options.compact ? undefined : 2;
-    console.log(
-      JSON.stringify(
-        {
-          command: "commit-msg",
-          rootDir,
-          ...result
-        },
-        null,
-        indent
-      )
-    );
-    return;
-  }
-
-  heading("Commit Message Suggestion");
-  info(`Title: ${result.title}`);
-  console.log();
-  secondary("Description:");
-  for (const line of result.description) {
-    secondary(`- ${line}`);
-  }
-
-  if (options.verbose) {
-    console.log();
-    secondary(`Source: ${result.source}`);
-    secondary(`Based on: ${result.basedOn.subject}`);
-    secondary(`Changed files: ${result.changedFiles.join(", ")}`);
-  }
-}
-
-async function runEodReportCommand(rootDir: string, options: CliOptions, commandArgs: string[]): Promise<void> {
-  const dateArg = commandArgs[0];
-  const githubToken = await resolveGitHubToken();
-
-  if (githubToken) {
-    secondary("Generating EOD report with GitHub Copilot...");
-  } else if (process.env.ANTHROPIC_API_KEY) {
-    secondary("Generating EOD report with Claude...");
-  }
-
-  const result = await generateEodReport(rootDir, dateArg, { githubToken });
-
-  if (options.json) {
-    const indent = options.compact ? undefined : 2;
-    console.log(
-      JSON.stringify(
-        {
-          command: "eod-report",
-          rootDir,
-          ...result
-        },
-        null,
-        indent
-      )
-    );
-    return;
-  }
-
-  heading(`EOD Summary (${result.date})`);
-  for (const line of result.executiveSummary) {
-    console.log(`- ${line}`);
-  }
-
-  const types = Object.entries(result.commitTypeBreakdown).sort((a, b) => b[1] - a[1]);
-  if (types.length > 0) {
-    console.log("- Commit type mix:");
-    for (const [type, count] of types) {
-      console.log(`  - ${type}: ${count}`);
+  if (sub === "add") {
+    const type = kvArgs.type;
+    const text = kvArgs.text;
+    if (!type || !text) {
+      throw new Error("memory add requires --type and --text.");
     }
-  }
 
-  console.log("- Detailed commit outcomes:");
-  if (result.summaryBullets.length === 0) {
-    console.log("  - No commits found for this date.");
+    const tags = kvArgs.tags ? kvArgs.tags.split(",").map((tag) => tag.trim()).filter(Boolean) : [];
+    const importance = kvArgs.importance ? Number(kvArgs.importance) : undefined;
+
+    const result = await addMemory(rootDir, {
+      type: parseMemoryType(type),
+      text,
+      source: (kvArgs.source as "manual" | "scan" | "chat" | "doc" | "command" | "import" | undefined) ?? "manual",
+      tags,
+      importance,
+      expiresAt: kvArgs.expiresAt ?? null
+    });
+
+    success(`Memory added: ${result.item.id}`);
+    if (result.warning) {
+      warning(result.warning);
+    }
+    if (options.verbose) {
+      info(`[memory] type=${result.item.type} tags=${result.item.tags.join(",") || "none"}`);
+    }
     return;
   }
 
-  for (const bullet of result.summaryBullets) {
-    console.log(`  - ${bullet}`);
+  if (sub === "list") {
+    const items = await listMemory(rootDir, {
+      type: kvArgs.type ? parseMemoryType(kvArgs.type) : undefined,
+      tag: kvArgs.tag,
+      query: kvArgs.query,
+      includeExpired: kvArgs["include-expired"] === "true",
+      limit: kvArgs.limit ? Number(kvArgs.limit) : undefined
+    });
+
+    if (options.json) {
+      const indent = options.compact ? undefined : 2;
+      console.log(JSON.stringify({ command: "memory", subcommand: "list", count: items.length, items }, null, indent));
+      return;
+    }
+
+    if (items.length === 0) {
+      info("No memory items found.");
+      return;
+    }
+
+    for (const item of items) {
+      info(`${item.id} [${item.type}] (${item.source}) ${item.text}`);
+    }
+    return;
   }
+
+  if (sub === "search") {
+    const query = kvArgs.query;
+    if (!query) {
+      throw new Error("memory search requires --query.");
+    }
+
+    const items = await searchMemory(rootDir, {
+      query,
+      maxItems: kvArgs["max-items"] ? Number(kvArgs["max-items"]) : undefined,
+      maxTokens: kvArgs["max-tokens"] ? Number(kvArgs["max-tokens"]) : undefined
+    });
+
+    if (items.length === 0) {
+      info("No relevant memory found.");
+      return;
+    }
+
+    for (const item of items) {
+      info(`${item.id} [${item.type}] score-use=${item.useCount} ${item.text}`);
+    }
+    return;
+  }
+
+  if (sub === "prune") {
+    const result = await pruneMemory(rootDir);
+    success(
+      `Pruned memory (duplicates=${result.removedDuplicate}, expired=${result.removedExpired}, low-value=${result.removedLowValue}, remaining=${result.remaining})`
+    );
+    return;
+  }
+
+  if (sub === "summarize") {
+    const result = await summarizeMemory(rootDir);
+    success(`Created ${result.createdSummaries} summaries and removed ${result.removedItems} old items.`);
+    return;
+  }
+
+  if (sub === "forget") {
+    const id = kvArgs.id;
+    const query = kvArgs.query;
+    if (!id && !query) {
+      throw new Error("memory forget requires --id or --query.");
+    }
+
+    const result = await forgetMemory(rootDir, { id, query });
+    success(`Removed ${result.removed} memory item(s).`);
+    return;
+  }
+
+  throw new Error(`Unknown memory subcommand: ${sub}`);
 }
 
 type PackageJsonLike = {
@@ -684,6 +671,7 @@ async function main(): Promise<void> {
   const command = parsed.command;
   const options = parsed.options;
   const commandArgs = parsed.commandArgs;
+  const kvArgs = parsed.kvArgs;
 
   try {
     switch (command) {
@@ -734,15 +722,11 @@ async function main(): Promise<void> {
         break;
       }
       case "sync": {
-        const syncGhToken = await resolveGitHubToken();
-        if (syncGhToken) {
-          secondary("Generating skills with GitHub Copilot...");
-        } else if (process.env.ANTHROPIC_API_KEY) {
+        if (process.env.ANTHROPIC_API_KEY) {
           secondary("Generating skills with Claude...");
         }
         const result = await syncContext(rootDir, {
           strict: options.strict,
-          githubToken: syncGhToken,
           onSkillPlan: (plan) => {
             if (!options.verbose) return;
             for (const { skill, action } of plan) {
@@ -772,12 +756,16 @@ async function main(): Promise<void> {
         await runBenchmarkCommand(rootDir, options);
         break;
       }
-      case "commit-msg": {
-        await runCommitMessageCommand(rootDir, options);
+      case "memory": {
+        await runMemoryCommand(rootDir, options, commandArgs, kvArgs);
         break;
       }
-      case "eod-report": {
-        await runEodReportCommand(rootDir, options, commandArgs);
+      case "visualize": {
+        const result = await generateSvgVisualization(rootDir);
+        success("Repository visualization generated");
+        if (options.verbose) {
+          info(`[visualize] wrote ${path.relative(rootDir, result.svgPath)} (${result.bytes} bytes)`);
+        }
         break;
       }
       case "version": {

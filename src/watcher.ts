@@ -10,7 +10,11 @@ const AUTO_TRIGGER_CONTEXT_FILES = new Set([
   `${CONTEXT_DIR_NAME}/memory.md`,
   `${CONTEXT_DIR_NAME}/preferences.md`,
   `${CONTEXT_DIR_NAME}/decisions.md`,
-  `${CONTEXT_DIR_NAME}/workflows.md`
+  `${CONTEXT_DIR_NAME}/workflows.md`,
+  `${CONTEXT_DIR_NAME}/config.json`,
+  `${CONTEXT_DIR_NAME}/memory/items.json`,
+  `${CONTEXT_DIR_NAME}/memory/summaries.json`,
+  `${CONTEXT_DIR_NAME}/memory/index.json`
 ]);
 
 export type AutoModeOptions = {

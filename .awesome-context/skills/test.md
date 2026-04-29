@@ -1,28 +1,22 @@
 ---
 skill: test
 title: Testing
-fingerprint: node --test|||
-generatedAt: 2026-04-27T14:15:51.918Z
+fingerprint: npm run build && node --test test/*.test.mjs|||
+generatedAt: 2026-04-29T01:06:21.308Z
 locked: false
 ---
 
 # Testing
 
 ## Quick Start
-
 ```bash
 npm run test
 ```
 
 ## How It Works
-- The `node --test` command executes the test suite, running all defined test cases.
-- Tests are categorized as unit, integration, or end-to-end (e2e) based on their location and structure.
-- Results are outputted to the console, showing passed and failed tests along with relevant error messages.
-
-## Variants
-
-(No variants available)
+- Runner: node --test
+- Test files: `**/*.test.*` / `**/*.spec.*` / `__tests__/`
 
 ## Watch Out For
-- Ensure that your test files follow the naming convention expected by the testing framework for them to be recognized.
-- Watch out for TypeScript compilation errors that may occur if your test files are not correctly typed.
+- Build first if tests import from `dist/`: `npm run build && npm run test`
+- Snapshot files are committed — update with `--updateSnapshot` flag

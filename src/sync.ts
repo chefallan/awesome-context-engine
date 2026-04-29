@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import { buildMemoryContext, getMemoryConfig } from "./memory.js";
 import { generateGraphContext } from "./graph.js";
 import { indexProject } from "./indexer.js";
 import { detectSensitiveMatches, redactSensitive } from "./redact.js";
@@ -13,7 +14,6 @@ export type SyncResult = {
 
 export type SyncOptions = {
   strict?: boolean;
-  githubToken?: string;
   onSkillPlan?: (plan: { skill: string; action: string }[]) => void;
 };
 
@@ -205,7 +205,13 @@ function renderContext(
   projectMapRaw: string,
   workflowsRaw: string,
   decisionsRaw: string,
-  minimalContextRaw: string
+  minimalContextRaw: string,
+  persistentMemorySections: {
+    persistentMemory: string[];
+    memoryDecisions: string[];
+    projectState: string[];
+    excludedMemory: string[];
+  }
 ): string {
   const globalSeen = new Set<string>();
 
@@ -254,6 +260,18 @@ ${renderList(projectMap)}
 ## Minimal Context Highlights
 ${renderList(minimalContext)}
 
+## Persistent Memory
+${renderList(persistentMemorySections.persistentMemory)}
+
+## Memory Decisions
+${renderList(persistentMemorySections.memoryDecisions)}
+
+## Current Project State
+${renderList(persistentMemorySections.projectState)}
+
+## Excluded Memory
+${renderList(persistentMemorySections.excludedMemory)}
+
 ## Notes
 - Use this file first for quick AI context.
 - Regenerate after meaningful repository or process changes.
@@ -288,7 +306,6 @@ export async function syncContext(rootDir: string, options: SyncOptions = {}): P
 
   const indexData = await indexProject(rootDir, { writeMarkdown: false, writeJson: false });
   const skillResult = await syncSkills(paths.skillsDir, indexData.data, {
-    githubToken: options.githubToken,
     onPlan: options.onSkillPlan
   });
 
@@ -299,7 +316,19 @@ export async function syncContext(rootDir: string, options: SyncOptions = {}): P
   const decisions = await readOptionalFile(paths.decisionsPath);
   const minimalContext = await readOptionalFile(paths.minimalContextPath);
 
-  const rendered = renderContext(memory, preferences, projectMap, workflows, decisions, minimalContext);
+  const memoryConfig = await getMemoryConfig(rootDir);
+  const memoryQuery = [preferences, workflows, decisions, minimalContext].join("\n");
+  const memoryContext = await buildMemoryContext(rootDir, {
+    query: memoryQuery,
+    config: memoryConfig
+  });
+
+  const rendered = renderContext(memory, preferences, projectMap, workflows, decisions, minimalContext, {
+    persistentMemory: memoryContext.sections.persistentMemory,
+    memoryDecisions: memoryContext.sections.memoryDecisions,
+    projectState: memoryContext.sections.projectState,
+    excludedMemory: memoryContext.sections.excludedMemory
+  });
   assertNoSensitiveInStrictMode("ai-context generation", rendered, Boolean(options.strict));
   const redacted = redactSensitive(rendered);
 
