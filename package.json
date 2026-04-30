@@ -1,6 +1,6 @@
 {
   "name": "awesome-context-engine",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Drop-in persistent context and memory layer for AI coding tools.",
   "main": "./dist/index.js",
   "exports": {
@@ -62,7 +62,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.55.1",
     "@inquirer/prompts": "^8.4.2",
-    "awesome-context-engine": "^2.0.1",
+    "awesome-context-engine": "^2.0.2",
     "picocolors": "^1.1.1"
   }
 }

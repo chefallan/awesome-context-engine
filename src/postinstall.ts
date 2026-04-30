@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const DESIRED_ENTRIES = [
   ".awesome-context/ai-context.md",
@@ -41,10 +42,11 @@ ANTHROPIC_API_KEY=
 function isAutoTaskCommand(cmd: unknown): boolean {
   if (typeof cmd !== "string") return false;
   const normalized = cmd.trim().replace(/\s+/g, " ");
+  // Match: npx [--yes] awesome-context-engine[@version] auto
+  //        awesome-context-engine[@version] auto
+  //        ace auto
   return (
-    normalized === "npx awesome-context-engine auto" ||
-    normalized === "npx --yes awesome-context-engine auto" ||
-    /(?:^|\s)awesome-context-engine\s+auto(?:\s|$)/.test(normalized) ||
+    /(?:^|\s)awesome-context-engine(?:@[^\s]+)?\s+auto(?:\s|$)/.test(normalized) ||
     /(?:^|\s)ace\s+auto(?:\s|$)/.test(normalized)
   );
 }
@@ -142,7 +144,7 @@ async function run(): Promise<void> {
   // Read own version from package.json alongside the compiled output.
   let ownVersion = "0.0.0";
   try {
-    const pkgPath = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "package.json");
+    const pkgPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json");
     const pkg = JSON.parse(await fs.readFile(pkgPath, "utf8")) as { version?: string };
     if (typeof pkg.version === "string") ownVersion = pkg.version;
   } catch {
