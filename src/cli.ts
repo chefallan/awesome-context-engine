@@ -36,13 +36,14 @@ import {
   type MemoryType
 } from "./memory.js";
 import { runDoctor } from "./doctor.js";
-import { initProject, type InitResult } from "./init.js";
+import { addTools, AVAILABLE_TOOLS, initProject, type InitResult } from "./init.js";
 import { indexProject } from "./indexer.js";
 import { scanRepositoryContext } from "./scan.js";
 import { syncContext } from "./sync.js";
 import { generateSvgVisualization } from "./visualize.js";
 import { getExitCodeForError } from "./strict-mode.js";
 import { getContextPaths } from "./templates.js";
+import { checkbox } from "@inquirer/prompts";
 import { confirmPrompt, error, heading, info, secondary, success, warning } from "./ui.js";
 import { startAutoMode } from "./watcher.js";
 
@@ -50,6 +51,7 @@ const execFileAsync = promisify(execFile);
 
 type Command =
   | "init"
+  | "init:add"
   | "index"
   | "scan"
   | "sync"
@@ -189,6 +191,7 @@ function parseCli(argv: string[]): ParsedCli {
       if (
         [
           "init",
+          "init:add",
           "index",
           "scan",
           "sync",
@@ -241,7 +244,8 @@ Preferred shorthand:
 
 Usage:
   ace                               First run setup or quick sync
-  ace init                          Bootstrap .awesome-context and baseline repo artifacts
+  ace init                          Bootstrap .awesome-context and choose AI tool integrations
+  ace init:add                      Add more AI tool integrations to an existing project
   ace scan                          Baseline context from an existing repository
   ace index                         Refresh project-map.md only (fast structure refresh)
   ace sync                          Rebuild ai-context.md after changes
@@ -298,6 +302,9 @@ Skills:
 
 Common examples:
   ace init
+  ace init --tools copilot,claude,cursor
+  ace init:add
+  ace init:add --tools gemini,kiro
   ace scan --dry-run --verbose
   ace index
   ace sync
@@ -368,8 +375,37 @@ function printInitRepoSummary(totalFiles: number, totalDirectories: number, byEx
   info(`top extensions: ${topExt || "none"}`);
 }
 
-async function runInitCommand(rootDir: string, options: CliOptions): Promise<void> {
-  const initResult = await initProject(rootDir);
+async function promptToolSelection(skipPrompt: boolean): Promise<string[] | undefined> {
+  if (skipPrompt || !process.stdin.isTTY || !process.stdout.isTTY) {
+    return undefined; // undefined = all tools
+  }
+
+  const selected = await checkbox({
+    message: "Which AI coding tools do you use? (Space to toggle, Enter to confirm)",
+    choices: AVAILABLE_TOOLS.map((tool) => ({ name: tool.label, value: tool.key })),
+    pageSize: AVAILABLE_TOOLS.length,
+  });
+
+  // Empty selection = user pressed Enter with nothing checked = install all
+  return selected.length > 0 ? selected : undefined;
+}
+
+async function runInitCommand(rootDir: string, options: CliOptions, kvArgs: Record<string, string>): Promise<void> {
+  const toolsArg = kvArgs.tools;
+  let selectedTools: string[] | undefined;
+  if (toolsArg) {
+    if (toolsArg === "all") {
+      selectedTools = undefined;
+    } else if (toolsArg === "none") {
+      selectedTools = [];
+    } else {
+      selectedTools = toolsArg.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+  } else {
+    selectedTools = await promptToolSelection(options.yes);
+  }
+
+  const initResult = await initProject(rootDir, { tools: selectedTools });
   if (options.verbose) {
     printInitVerbose(initResult);
   }
@@ -407,17 +443,18 @@ async function runInitCommand(rootDir: string, options: CliOptions): Promise<voi
   }
 
   info("Initialization complete. Run ace context:pack <file> whenever you need a fresh context drop.");
+  if (selectedTools && selectedTools.length > 0) {
+    secondary(`To add more tools later: ace init:add`);
+  }
 }
 
-async function runFirstTimeExperience(rootDir: string, options: CliOptions): Promise<void> {
+async function runFirstTimeExperience(rootDir: string, options: CliOptions, kvArgs: Record<string, string>): Promise<void> {
   heading("✨ awesome-context-engine");
   console.log();
   info("Portable repo memory for AI coding agents.");
   console.log();
   info("This will create:");
-  for (const item of CREATE_LIST) {
-    info(`  ${item}`);
-  }
+  info("  .awesome-context/");
   console.log();
 
   const shouldInitialize = await confirmPrompt("Initialize awesome-context-engine in this repo?", true, options.yes);
@@ -426,12 +463,29 @@ async function runFirstTimeExperience(rootDir: string, options: CliOptions): Pro
     return;
   }
 
+  const toolsArg = kvArgs.tools;
+  let selectedTools: string[] | undefined;
+  if (toolsArg) {
+    if (toolsArg === "all") {
+      selectedTools = undefined;
+    } else if (toolsArg === "none") {
+      selectedTools = [];
+    } else {
+      selectedTools = toolsArg.split(",").map((s) => s.trim()).filter(Boolean);
+    }
+  } else {
+    selectedTools = await promptToolSelection(options.yes);
+  }
+
   try {
-    const initResult = await initProject(rootDir);
+    const initResult = await initProject(rootDir, { tools: selectedTools });
     if (options.verbose) {
       printInitVerbose(initResult);
     }
     success("Context files created");
+    if (initResult.created.filter((f) => !f.startsWith(".awesome-context")).length > 0) {
+      success(`Integration files created: ${initResult.created.filter((f) => !f.startsWith(".awesome-context")).join(", ")}`);
+    }
   } catch (stepError) {
     printStepError("init", stepError);
     return;
@@ -468,15 +522,13 @@ async function runFirstTimeExperience(rootDir: string, options: CliOptions): Pro
   }
 
   console.log();
-  secondary("Next:");
-  secondary("  Open Claude Code, Codex, OpenCode, Cursor, Gemini CLI, Copilot Chat/CLI, Aider, OpenClaw, Factory Droid, Trae, Hermes, Kiro, or Google Antigravity.");
-  secondary("  They will read .awesome-context/ai-context.md first.");
+  secondary("To add more AI tools later: ace init:add");
 }
 
-async function runDefault(rootDir: string, options: CliOptions): Promise<void> {
+async function runDefault(rootDir: string, options: CliOptions, kvArgs: Record<string, string>): Promise<void> {
   const hasContext = await hasContextFolder(rootDir);
   if (!hasContext) {
-    await runFirstTimeExperience(rootDir, options);
+    await runFirstTimeExperience(rootDir, options, kvArgs);
     return;
   }
 
@@ -678,8 +730,8 @@ function parsePositiveInt(raw: string | undefined): number | undefined {
 }
 
 async function readCaptureInput(rootDir: string, kvArgs: Record<string, string>): Promise<string> {
-  if (kvArgs.text) {
-    return kvArgs.text;
+  if (kvArgs.text ?? kvArgs.note) {
+    return (kvArgs.text ?? kvArgs.note) as string;
   }
 
   const fileArg = kvArgs.file ?? kvArgs.from;
@@ -974,10 +1026,27 @@ async function main(): Promise<void> {
   try {
     switch (command) {
       case null:
-        await runDefault(rootDir, options);
+        await runDefault(rootDir, options, kvArgs);
         break;
       case "init": {
-        await runInitCommand(rootDir, options);
+        await runInitCommand(rootDir, options, kvArgs);
+        break;
+      }
+      case "init:add": {
+        const toolsArg = kvArgs.tools ?? commandArgs.join(",");
+        let toolKeys: string[] | undefined;
+        if (toolsArg && toolsArg !== "all") {
+          toolKeys = toolsArg.split(",").map((s) => s.trim()).filter(Boolean);
+        } else if (!toolsArg) {
+          toolKeys = await promptToolSelection(options.yes);
+        }
+        const result = await addTools(rootDir, toolKeys ?? AVAILABLE_TOOLS.map((t) => t.key));
+        const added = result.created.filter((f) => !f.startsWith(".awesome-context"));
+        if (added.length > 0) {
+          success(`Added integration files: ${added.join(", ")}`);
+        } else {
+          info("No new integration files added (already up to date).");
+        }
         break;
       }
       case "index": {

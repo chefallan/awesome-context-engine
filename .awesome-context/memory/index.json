@@ -1,9 +1,31 @@
 {
-  "byTag": {},
+  "byTag": {
+    "security": [
+      "mem_seed_rule_1"
+    ],
+    "self-heal": [
+      "mem_seed_rule_2"
+    ],
+    "quality": [
+      "mem_seed_rule_2"
+    ],
+    "workflow": [
+      "mem_seed_rule_3",
+      "mem_seed_warning_1"
+    ]
+  },
   "byType": {
     "preference": [
       "mem_mojabw2g_7skhsm"
+    ],
+    "rule": [
+      "mem_seed_rule_1",
+      "mem_seed_rule_2",
+      "mem_seed_rule_3"
+    ],
+    "warning": [
+      "mem_seed_warning_1"
     ]
   },
-  "updatedAt": "2026-04-30T01:20:36.299Z"
+  "updatedAt": "2026-05-04T22:48:07.816Z"
 }

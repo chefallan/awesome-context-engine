@@ -17,7 +17,7 @@ export type SyncOptions = {
   onSkillPlan?: (plan: { skill: string; action: string }[]) => void;
 };
 
-const MAX_CONTEXT_CHARS = 5500;
+const MAX_CONTEXT_CHARS = 8000;
 const PRIORITY_LINE_LIMIT = 10;
 
 const SECTION_LIMITS: Record<string, number> = {
@@ -213,6 +213,108 @@ function trimToMaxChars(content: string, maxChars: number): string {
   return `${content.slice(0, maxChars)}\n\n...[truncated for context budget]`;
 }
 
+type CacheFileEntry = {
+  summary: string;
+  exports: string[];
+  language: string;
+};
+
+type CachedFiles = Record<string, CacheFileEntry>;
+
+type FcFileEntry = {
+  provides: string[];
+  summary: string;
+};
+
+type FcFiles = Record<string, FcFileEntry>;
+
+type ModuleCatalogEntry = {
+  path: string;
+  exports: string[];
+};
+
+async function buildModuleCatalog(cachePath: string, fileContextPath: string): Promise<ModuleCatalogEntry[]> {
+  let cacheFiles: CachedFiles = {};
+  let fcFiles: FcFiles = {};
+
+  try {
+    const raw = await fs.readFile(cachePath, "utf8");
+    const data = JSON.parse(raw) as { files?: CachedFiles };
+    cacheFiles = data.files ?? {};
+  } catch {
+    // cache not yet built
+  }
+
+  try {
+    const raw = await fs.readFile(fileContextPath, "utf8");
+    const data = JSON.parse(raw) as { files?: FcFiles };
+    fcFiles = data.files ?? {};
+  } catch {
+    // file-context not yet built
+  }
+
+  const entries: ModuleCatalogEntry[] = [];
+
+  for (const [filePath, cacheEntry] of Object.entries(cacheFiles)) {
+    if (!/^src\//.test(filePath)) continue;
+    if (!/\.(ts|tsx|js|jsx)$/.test(filePath)) continue;
+
+    const provides = fcFiles[filePath]?.provides ?? cacheEntry.exports ?? [];
+    if (provides.length === 0) continue;
+
+    entries.push({ path: filePath, exports: provides });
+  }
+
+  return entries.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function renderRepoBrain(catalog: ModuleCatalogEntry[], generatedAt: string): string {
+  const lines: string[] = [];
+
+  lines.push("# Repo Brain");
+  lines.push("");
+  lines.push(`Generated at: ${generatedAt}`);
+  lines.push("");
+  lines.push("## Cold-Start Instructions");
+  lines.push("");
+  lines.push("This file is the persistent knowledge base for this repository.");
+  lines.push("Load this file at the start of any session — you do not need to scan, grep, or explore the repo to understand it.");
+  lines.push("The Module Catalog below tells you exactly what each source file exports and does.");
+  lines.push("Use `.awesome-context/ai-context.md` for rules, memory, workflows, and decisions.");
+  lines.push("");
+  lines.push("## Module Catalog");
+  lines.push("");
+
+  for (const entry of catalog) {
+    const exportsStr = entry.exports.join(", ");
+    lines.push(`### ${entry.path}`);
+    lines.push(`- Exports: ${exportsStr}`);
+    lines.push("");
+  }
+
+  lines.push("## Architecture Data Flow");
+  lines.push("");
+  lines.push("```");
+  lines.push("ace sync");
+  lines.push("  → graph.ts        generateGraphContext  — builds graph.json + cache.json (symbol/import graph)");
+  lines.push("  → indexer.ts      indexProject          — builds project-map.md + project-index.json");
+  lines.push("  → context-marks.ts markContextFiles     — writes @ace-dna headers, file-context.json, impact-map.json");
+  lines.push("  → memory.ts       buildMemoryContext    — loads items.json, guarantees rule/warning items surface");
+  lines.push("  → sync.ts         renderContext         — compresses all sources into ai-context.md");
+  lines.push("  → sync.ts         renderRepoBrain       — writes repo-brain.md (this file)");
+  lines.push("```");
+  lines.push("");
+  lines.push("## Key Entry Points");
+  lines.push("");
+  lines.push("- `src/cli.ts` — all `ace` CLI commands");
+  lines.push("- `src/index.ts` — public Node.js API surface");
+  lines.push("- `.awesome-context/ai-context.md` — agent context (read this first)");
+  lines.push("- `.awesome-context/repo-brain.md` — this file (full module map)");
+  lines.push("- `.awesome-context/memory/items.json` — persistent memory store");
+
+  return lines.join("\n");
+}
+
 function renderContext(
   memoryRaw: string,
   preferencesRaw: string,
@@ -225,7 +327,8 @@ function renderContext(
     memoryDecisions: string[];
     projectState: string[];
     excludedMemory: string[];
-  }
+  },
+  moduleCatalog: ModuleCatalogEntry[]
 ): string {
   const globalSeen = new Set<string>();
 
@@ -249,9 +352,16 @@ function renderContext(
 
   const renderList = (items: string[]) => (items.length ? items.map((line) => `- ${line}`).join("\n") : "- none");
 
+  const moduleIndex = moduleCatalog
+    .map((e) => `- ${e.path}: ${e.exports.join(", ")}`)
+    .join("\n") || "- none";
+
   const rendered = `# AI Context
 
 Generated at: ${new Date().toISOString()}
+
+> **Cold-start**: This file is the repo brain. Read it before any code exploration.
+> For the full module catalog and architecture map, read \`.awesome-context/repo-brain.md\`.
 
 ## Top Priorities
 ${renderList(topPriorities)}
@@ -282,6 +392,9 @@ ${renderList(persistentMemorySections.memoryDecisions)}
 
 ## Current Project State
 ${renderList(persistentMemorySections.projectState)}
+
+## Module Index
+${moduleIndex}
 
 ## Excluded Memory
 ${renderList(persistentMemorySections.excludedMemory)}
@@ -340,16 +453,24 @@ export async function syncContext(rootDir: string, options: SyncOptions = {}): P
     config: memoryConfig
   });
 
+  const moduleCatalog = await buildModuleCatalog(paths.cachePath, paths.fileContextPath);
+
   const rendered = renderContext(memory, preferences, projectMap, workflows, decisions, minimalContext, {
     persistentMemory: memoryContext.sections.persistentMemory,
     memoryDecisions: memoryContext.sections.memoryDecisions,
     projectState: memoryContext.sections.projectState,
     excludedMemory: memoryContext.sections.excludedMemory
-  });
+  }, moduleCatalog);
   assertNoSensitiveInStrictMode("ai-context generation", rendered, Boolean(options.strict));
   const redacted = redactSensitive(rendered);
 
   await fs.writeFile(paths.aiContextPath, redacted, "utf8");
+
+  const brainContent = renderRepoBrain(moduleCatalog, new Date().toISOString());
+  const redactedBrain = redactSensitive(brainContent);
+  assertNoSensitiveInStrictMode("repo-brain generation", redactedBrain, Boolean(options.strict));
+  await fs.writeFile(paths.repoBrainPath, redactedBrain, "utf8");
+
   const stat = await fs.stat(paths.aiContextPath);
 
   return {

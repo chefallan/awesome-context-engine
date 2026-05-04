@@ -26,6 +26,16 @@ Rules for AI agents: fire these commands based on what is happening in the conve
 - `ace genesis capture` should store lessons, patterns, and decisions — not raw file content.
 - Do not run commands speculatively. Only fire when the situation matches the trigger above.
 
+## Self-Healing Protocol (Automatic — No Commands Needed)
+
+Before sending every response:
+
+1. Re-read the `## Persistent Memory` section of `.awesome-context/ai-context.md` (it is already in your context).
+2. Check your draft against every `[rule]` and `[warning]` item.
+3. If any rule is violated — **silently revise your draft** before sending. Do not mention the check unless the user asks.
+
+The rules are injected automatically by `ace sync`. No manual commands are required for this check.
+
 <!-- awesome-context-engine:scan:start -->
 ## Auto-Scanned Workflows
 

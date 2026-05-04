@@ -175,7 +175,7 @@ async function main() {
   console.log(`Release target: ${pkgBefore.name} (${pkgBefore.version} -> ${bump})`);
 
   const proceed = await confirm({
-    message: "Continue with bump, publish, install update, commit, and push?",
+    message: "Continue with bump, build, and publish?",
     default: true
   });
 
@@ -235,25 +235,9 @@ async function main() {
   await run(npmBin, ["install", `${pkgAfter.name}@${pkgAfter.version}`], rootDir);
   console.log("Project dependency updated.");
 
-  const branch = await run("git", ["rev-parse", "--abbrev-ref", "HEAD"], rootDir);
-  if (!branch || branch === "HEAD") {
-    throw new Error("Release script requires a named branch (detached HEAD is not supported).");
-  }
-
-  await run("git", ["add", "-A"], rootDir);
-
-  const releaseTitle = `release: publish ${pkgAfter.version}`;
-  const releaseBody = [
-    `Publish ${pkgAfter.name}@${pkgAfter.version} to npm.`,
-    `Update global install and project dependency to ${pkgAfter.version}.`
-  ].join("\n");
-
-  await run("git", ["commit", "-m", releaseTitle, "-m", releaseBody], rootDir);
-  await run("git", ["push", "origin", branch], rootDir);
-
-  console.log(`Published ${pkgAfter.name}@${pkgAfter.version}`);
-  console.log(`Pushed commit to ${branch}`);
-  console.log(`Commit title: ${releaseTitle}`);
+  console.log(`\n✓ Published ${pkgAfter.name}@${pkgAfter.version}`);
+  console.log(`  Global and project installs are on ${pkgAfter.version}.`);
+  console.log(`  Commit and push when ready: git add -A && git commit -m "release: ${pkgAfter.version}" && git push`);
 }
 
 main().catch((err) => {

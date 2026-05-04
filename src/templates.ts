@@ -22,6 +22,7 @@ export type ContextPaths = {
   graphJsonPath: string;
   impactMapPath: string;
   minimalContextPath: string;
+  repoBrainPath: string;
 };
 
 export function getContextPaths(rootDir: string): ContextPaths {
@@ -47,7 +48,8 @@ export function getContextPaths(rootDir: string): ContextPaths {
     indexJsonPath: path.join(contextDir, "project-index.json"),
     graphJsonPath: path.join(contextDir, "graph.json"),
     impactMapPath: path.join(contextDir, "impact-map.json"),
-    minimalContextPath: path.join(contextDir, "minimal-context.md")
+    minimalContextPath: path.join(contextDir, "minimal-context.md"),
+    repoBrainPath: path.join(contextDir, "repo-brain.md")
   };
 }
 

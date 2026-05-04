@@ -24,7 +24,8 @@ const SECRET_PATTERNS: SecretPattern[] = [
   { name: "authorization-header", pattern: /\b(?:authorization|bearer)\s+[A-Za-z0-9._\-]{16,}\b/gi },
   { name: "secret-assignment-quoted", pattern: /\b(?:password|passwd|secret|token|api[_-]?key)\s*[:=]\s*["'][^"']+["']/gi },
   { name: "secret-assignment", pattern: /\b(?:password|passwd|secret|token|api[_-]?key)\s*[:=]\s*[^\s"']+/gi },
-  { name: "database-uri", pattern: /\b(?:postgres(?:ql)?:\/\/|mysql:\/\/|mongodb(?:\+srv)?:\/\/)[^\s"']+/gi }
+  { name: "database-uri", pattern: /\b(?:postgres(?:ql)?:\/\/|mysql:\/\/|mongodb(?:\+srv)?:\/\/)[^\s"']+/gi },
+  { name: "env-var-assignment", pattern: /\b[A-Z][A-Z0-9_]{2,}(?:KEY|TOKEN|SECRET|PASS(?:WORD)?|API|CREDENTIAL|CERT|PRIVATE|AUTH)[A-Z0-9_]*\s*=\s*[^\s"']{8,}/g }
 ];
 
 export function detectSensitiveMatches(input: string): SecretMatchSummary[] {

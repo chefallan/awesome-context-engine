@@ -7,9 +7,70 @@
     "tags": [],
     "importance": 3,
     "createdAt": "2026-04-28T23:56:34.455Z",
-    "updatedAt": "2026-04-30T01:20:36.298Z",
-    "lastUsedAt": "2026-04-30T01:20:36.298Z",
-    "useCount": 42,
+    "updatedAt": "2026-05-04T22:48:07.816Z",
+    "lastUsedAt": "2026-05-04T22:48:07.816Z",
+    "useCount": 44,
+    "expiresAt": null
+  },
+  {
+    "id": "mem_seed_rule_1",
+    "type": "rule",
+    "text": "Never store secrets, tokens, credentials, or private keys in memory files or generated content.",
+    "source": "scan",
+    "tags": [
+      "security"
+    ],
+    "importance": 5,
+    "createdAt": "2026-05-04T00:00:00.000Z",
+    "updatedAt": "2026-05-04T22:48:07.816Z",
+    "lastUsedAt": "2026-05-04T22:48:07.816Z",
+    "useCount": 2,
+    "expiresAt": null
+  },
+  {
+    "id": "mem_seed_rule_2",
+    "type": "rule",
+    "text": "Before sending any response, check the rules and warnings in ai-context.md and revise if any are violated.",
+    "source": "scan",
+    "tags": [
+      "self-heal",
+      "quality"
+    ],
+    "importance": 5,
+    "createdAt": "2026-05-04T00:00:00.000Z",
+    "updatedAt": "2026-05-04T22:48:07.816Z",
+    "lastUsedAt": "2026-05-04T22:48:07.816Z",
+    "useCount": 2,
+    "expiresAt": null
+  },
+  {
+    "id": "mem_seed_rule_3",
+    "type": "rule",
+    "text": "Run ace sync after every set of file changes to keep ai-context.md current.",
+    "source": "scan",
+    "tags": [
+      "workflow"
+    ],
+    "importance": 4,
+    "createdAt": "2026-05-04T00:00:00.000Z",
+    "updatedAt": "2026-05-04T22:48:07.816Z",
+    "lastUsedAt": "2026-05-04T22:48:07.816Z",
+    "useCount": 2,
+    "expiresAt": null
+  },
+  {
+    "id": "mem_seed_warning_1",
+    "type": "warning",
+    "text": "Stale ai-context.md means the agent is working with outdated rules. Re-run ace sync if context feels wrong.",
+    "source": "scan",
+    "tags": [
+      "workflow"
+    ],
+    "importance": 4,
+    "createdAt": "2026-05-04T00:00:00.000Z",
+    "updatedAt": "2026-05-04T22:48:07.816Z",
+    "lastUsedAt": "2026-05-04T22:48:07.816Z",
+    "useCount": 2,
     "expiresAt": null
   }
 ]

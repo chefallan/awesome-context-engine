@@ -1,62 +1,62 @@
 # awesome-context-engine
 
-Portable repo memory and context optimization for AI coding agents.
+Portable repo memory and AI context optimization for any AI coding tool.
 
 [![npm version](https://img.shields.io/npm/v/awesome-context-engine.svg)](https://www.npmjs.com/package/awesome-context-engine)
 [![license: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![node >=18](https://img.shields.io/badge/node-%3E%3D18-339933.svg)](https://nodejs.org/)
 
-awesome-context-engine keeps AI sessions focused by generating compact, relevant context from your repository state, decisions, and memory.
+`ace` keeps AI coding sessions focused by generating compact, relevant context from your repo — cutting token usage by up to 98% without losing the information that matters.
 
-## Why Use It
-
-- Reduce prompt noise and token waste
-- Keep project context fresh after code changes
-- Persist team and project memory in-repo
-- Improve consistency across AI coding assistants
+---
 
 ## Install
+
+```bash
+npm install -g awesome-context-engine
+```
+
+Or run without installing:
 
 ```bash
 npx awesome-context-engine
 ```
 
-Shorthand command after install:
+---
+
+## Quick Start
 
 ```bash
-ace <command>
+ace init              # bootstrap .awesome-context/ and pick your AI tools
+ace context:pack <file>       # load focused context before a coding task
+# ...make your changes...
+ace sync              # rebuild ai-context.md after changes
 ```
 
-## Quick Start (2 Minutes)
+`ace init` will prompt you to select which AI tools you use (GitHub Copilot, Claude, Cursor, Gemini, Aider, Cline, etc.) and create the right integration file for each one.
+
+To add more tools later:
 
 ```bash
-ace init
-ace context:pack src/cli.ts
-ace sync
-ace doctor
+ace init:add          # interactive picker
+ace init:add --tools gemini,kiro   # or specify directly
 ```
 
-What this does:
+---
 
-- `init`: bootstrap `.awesome-context` and integration instructions
-- `context:pack <file>`: produce focused context for one coding task
-- `sync`: rebuild compact `ai-context.md` after changes
-- `doctor`: validate setup and detect issues early
+## How It Works
 
-## Why Context Optimization Matters
+On `ace sync`, the engine reads your repo state and writes `.awesome-context/ai-context.md` — a compact summary containing active rules, memory, module index, and workflows. Every integration file (CLAUDE.md, copilot-instructions.md, AGENTS.md, etc.) points the AI tool at this file first.
 
-This project uses a SWE-bench-like comparison format: identical task intent, compared with and without awesome-context-engine context optimization.
+Instead of sending thousands of tokens of raw source to the AI, you send one focused file.
 
-Run commands:
+---
 
-```bash
-ace benchmark --json --compact
-ace benchmark:eval --json --compact
-npm run benchmark:real
-npm run benchmark:external
-```
+## Benchmark Results
 
-### SWE-Like Benchmark Table (Measured)
+Token reduction measured on real local and external repos.
+
+### Local Repo (this project)
 
 <!-- benchmark:local:start -->
 | Scenario | Model | Assistant | Context Size | Repo / Task Type | Without ACE Tokens | With ACE Tokens | Reduction | Data Source |
@@ -77,7 +77,7 @@ Notes:
 - Official SWE-bench pass-rate style metrics (for example pass@1 or resolve rate) require measured multi-scenario execution and are not claimed here.
 <!-- benchmark:local:end -->
 
-### External GitHub Benchmark Table (Measured)
+### External GitHub Repos
 
 <!-- benchmark:external:start -->
 | Scenario | Repository | Commit | Model | Assistant | Context Size | Without ACE Tokens | With ACE Tokens | Reduction | Data Source |
@@ -94,131 +94,56 @@ Notes:
 - Reproduce with `npm run benchmark:external`; source artifact: `.awesome-context/benchmark/external-github-results.json`.
 <!-- benchmark:external:end -->
 
+Reproduce benchmarks:
+
+```bash
+npm run benchmark:real
+npm run benchmark:external
+```
+
+---
+
 ## Core Commands
 
-Daily workflow:
-
 ```bash
-ace context:pack <file>   # before focused coding
-# ...make changes...
-ace sync                  # after changes
+ace init                    # first-run setup, choose AI tools
+ace init:add                # add more AI tool integrations later
+ace context:pack <file>     # focused context before coding
+ace sync                    # rebuild context after changes
+ace scan                    # re-baseline repo context
+ace doctor                  # health check
 ```
 
-Setup and maintenance:
+Memory:
 
 ```bash
-ace init                  # first-run bootstrap
-ace scan                  # baseline existing repository context
-ace index                 # refresh project map only
-ace graph                 # regenerate dependency graph
-ace benchmark             # compare raw vs optimized context token estimates
-ace benchmark:eval        # run SWE-bench-inspired eval harness
-npm run benchmark:eval:prepare   # generate measured-run template JSONL
-npm run benchmark:eval:validate -- --input .awesome-context/benchmark/measured-runs.template.jsonl
-npm run benchmark:eval:apply -- --input .awesome-context/benchmark/measured-runs.template.jsonl
-ace doctor                # health checks
+ace memory add --type preference --text "Always use TypeScript"
+ace memory search --query "typescript"
+ace memory list
 ```
 
-Context commands:
+Learning (Genesis):
 
 ```bash
-ace context:pack <file>
-ace context:impact <file>
-ace context:refresh
-ace context:check
-ace context:explain <file>
+ace learn:capture --note "lesson learned"
+ace learn:recall "topic"
 ```
 
-Memory commands:
+---
 
-```bash
-ace memory add --type preference --text "Use concise docs"
-ace memory search --query "docs"
-ace memory summarize
-ace memory prune
-```
+## Supported AI Tools
 
-Learning commands (ACE Genesis):
+Works with: **GitHub Copilot**, **Claude / Claude Code**, **OpenAI Codex / Agents**, **Cursor**, **Gemini CLI**, **Aider**, **OpenCode**, **Cline**, **Continue**, **Trae**, **Kiro**, **Hermes**, **Factory Droid**, **OpenClaw**, **Google Antigravity**.
 
-```bash
-ace learn:capture --file exports/session.txt --summary "fixed flaky tests"
-ace learn:recall "flaky tests"
-ace learn:suggest
-ace learn:skill
-ace learn:reflect
-ace learn:profile
-```
-
-## Skills: Repo-Derived vs Learning-Derived
-
-- Repo-derived skills are generated by `sync` only when `skills.enabled=true` in `.awesome-context/config.json`.
-- Default is `skills.enabled=false`.
-- Learning-derived skill drafts are created by Genesis under `.awesome-context/skills/drafts/`.
-
-## Works With
-
-Claude Code, Codex, OpenCode, Cursor, Gemini CLI, GitHub Copilot CLI, VS Code Copilot Chat, Aider, OpenClaw, Factory Droid, Trae, Hermes, Kiro, Google Antigravity, Cline, Continue.
+---
 
 ## Safety
 
-- Runs locally in your repository
-- Redacts secret-like content before memory/context persistence
-- Strict mode available: `ace sync --strict`
-- Benchmark output is estimate-based, not billing-exact
+- Runs entirely locally — no data leaves your machine
+- Automatically redacts secrets, tokens, API keys, and private keys before writing to memory or context files
+- `ace sync --strict` exits non-zero on any detected issue
 
-## Benchmark Methodology
-
-Run local A/B comparison:
-
-```bash
-ace sync
-ace benchmark
-ace benchmark --json --compact
-ace benchmark:eval --json --compact
-npm run benchmark:eval:prepare
-```
-
-Comparison model:
-
-- Baseline: raw source context files
-- Optimized: generated `.awesome-context/ai-context.md`
-- Token estimate heuristic: `chars / 4` (model-agnostic estimate)
-- Scenario scaling: baseline/optimized tokens scaled across model/assistant/context-size/task profiles
-- Cost estimates: approximate input-token cost by model class (estimates, not billing guarantees)
-
-Eval harness artifacts:
-
-- Scenario manifest: `.awesome-context/benchmark/eval-scenarios.json`
-- Results output: `.awesome-context/benchmark/eval-results.json`
-- Measured run template: `.awesome-context/benchmark/measured-runs.template.jsonl`
-
-To convert estimated rows into measured rows, populate `measured` fields per scenario in the manifest (tokens, optional costs, relevance scores, success rates).
-
-Scripted measured workflow:
-
-1. `npm run benchmark:eval:prepare`
-2. Fill `.awesome-context/benchmark/measured-runs.template.jsonl` with real runs (one JSON object per line)
-3. `npm run benchmark:eval:validate -- --input .awesome-context/benchmark/measured-runs.template.jsonl`
-4. `npm run benchmark:eval:apply -- --input .awesome-context/benchmark/measured-runs.template.jsonl`
-5. Inspect `.awesome-context/benchmark/eval-results.json`
-
-Validation notes:
-
-- `validate` checks schema/ranges and warns if a scenario is missing Claude or GPT rows.
-- Add `--strict-coverage true` to fail validation on coverage warnings.
-
-## Project Layout
-
-```text
-.awesome-context/
-  ai-context.md
-  project-map.md
-  minimal-context.md
-  graph.json
-  cache.json
-  memory/
-  skills/
-```
+---
 
 ## Contributing
 
@@ -227,3 +152,4 @@ PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 MIT. See [LICENSE](LICENSE).
+

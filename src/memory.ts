@@ -639,13 +639,30 @@ export async function buildMemoryContext(rootDir: string, input: BuildMemoryCont
   }
 
   const store = await loadMemoryStore(rootDir);
-  const relevant = await searchMemory(rootDir, {
+
+  // Always include all non-expired rule and warning items regardless of maxItems cap.
+  // These are the enforcement anchors for self-healing and must never be silently dropped.
+  const ALWAYS_INCLUDE_TYPES = new Set<MemoryType>(["rule", "warning"]);
+  const alwaysIncluded = store.items.filter(
+    (item) =>
+      ALWAYS_INCLUDE_TYPES.has(item.type) &&
+      !isExpired(item) &&
+      config.includeTypes.includes(item.type) &&
+      !config.excludeTypes.includes(item.type)
+  );
+  const alwaysIncludedIds = new Set(alwaysIncluded.map((item) => item.id));
+
+  // Fill remaining budget with relevance-scored items, excluding already-guaranteed ones.
+  const remainingBudget = Math.max(0, config.maxItems - alwaysIncluded.length);
+  const scored = await searchMemory(rootDir, {
     query: input.query,
     includeTypes: config.includeTypes,
     excludeTypes: config.excludeTypes,
-    maxItems: config.maxItems,
+    maxItems: remainingBudget + alwaysIncluded.length, // over-fetch then filter
     maxTokens: config.maxTokens
   });
+  const additionalItems = scored.filter((item) => !alwaysIncludedIds.has(item.id)).slice(0, remainingBudget);
+  const relevant = [...alwaysIncluded, ...additionalItems];
 
   const includedIds = new Set(relevant.map((item) => item.id));
   const excluded: Array<{ id: string; reason: string }> = [];

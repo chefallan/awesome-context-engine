@@ -1,4 +1,13 @@
+# Aider Instructions
 
+This file is read by Aider at startup as project conventions.
+
+## Key Rules
+
+- Read `.awesome-context/ai-context.md` first — it is the repo brain (rules, memory, module index, workflows).
+- Aider auto-commits after each edit. Run `ace sync` as a post-commit step to keep context current.
+- Use architect mode (`--architect`) for planning multi-file changes before implementation.
+- Prefer targeted edits. Do not refactor, rename, or restructure beyond what was explicitly requested.
 
 <!-- awesome-context-engine:integration:start -->
 ## awesome-context-engine Integration
@@ -35,11 +44,3 @@ This runs automatically — no commands needed. Before sending **every** respons
 3. If any rule is violated — **silently revise your draft** before sending. Do not mention the check unless the user asks.
 <!-- awesome-context-engine:integration:end -->
 
-# Copilot Instructions
-
-- Read .awesome-context/ai-context.md first.
-- Use .awesome-context/project-map.md for repo structure.
-- Use .awesome-context/workflows.md and .awesome-context/skills/ for repeatable tasks.
-- Preserve preferences from .awesome-context/preferences.md.
-- After completing tasks, suggest updates to .awesome-context/memory.md.
-- Never store secrets, tokens, credentials, or private keys in memory files.
